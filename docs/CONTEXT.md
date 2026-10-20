@@ -15,6 +15,15 @@
 >   en la UI con la etiqueta **DATOS DE DEMO**.
 > - Estado: **Fase 1 completada** (proyecto, launcher de TV, navegación, inicio y
 >   pantallas con datos demo; compila y genera APK debug).
+> - Verificación en emulador Android TV (API 36, 1080p/320 dpi): foco inicial en
+>   todas las pantallas, navegación con D-pad, filtros de TV en directo, búsqueda
+>   con teclado y avisos de fase. Rail ajustado a 540 dp de alto (54 dp por
+>   elemento) para que Ajustes siempre sea visible; al recuperar el foco, el hero
+>   vuelve a la parte superior para no cortar el título.
+> - La búsqueda pide foco al entrar y abre el teclado en pantalla. El primer
+>   BACK oculta el teclado; el siguiente vuelve a Inicio.
+> - CI de GitHub Actions en verde: `assembleDebug` + tests unitarios; el APK
+>   release con R8 se comprueba también en local.
 
 # CONTEXT.md --- Proyecto de app IPTV para Android TV
 
