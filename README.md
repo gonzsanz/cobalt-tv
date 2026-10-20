@@ -7,9 +7,22 @@ configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 > **Estado: Fase 1 (base navegable).** La app arranca, navega con mando y muestra
 > pantallas completas con **datos de demostración**. Todavía no descarga listas
 > M3U, no conecta con Xtream Codes y no reproduce vídeo: eso llega en las
-> siguientes fases.
+> siguientes fases. Verificada en el emulador Android TV (API 36) con D-pad.
 
 ![Banner](app/src/main/res/drawable/tv_banner.png)
+
+## Capturas
+
+| Inicio | TV en directo |
+| --- | --- |
+| ![Inicio](docs/screenshots/home.png) | ![TV en directo](docs/screenshots/live.png) |
+
+| Películas | Buscar |
+| --- | --- |
+| ![Películas](docs/screenshots/movies.png) | ![Buscar](docs/screenshots/search.png) |
+
+Más pantallas: [series](docs/screenshots/series.png),
+[ajustes](docs/screenshots/settings.png) y [fuentes](docs/screenshots/sources.png).
 
 ## Qué hay ahora mismo
 

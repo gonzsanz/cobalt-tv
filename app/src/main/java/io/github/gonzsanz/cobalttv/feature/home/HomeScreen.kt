@@ -15,14 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -30,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import kotlinx.coroutines.launch
 import io.github.gonzsanz.cobalttv.core.designsystem.Cobalt
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltButton
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltButtonStyle
@@ -52,9 +56,15 @@ fun HomeScreen(
     onToast: (String) -> Unit,
 ) {
     val heroFocusRequester = remember { FocusRequester() }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val bringHeroIntoView: () -> Unit = {
+        scope.launch { listState.animateScrollToItem(0) }
+    }
     InitialFocusEffect(heroFocusRequester)
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 32.dp),
     ) {
@@ -70,6 +80,7 @@ fun HomeScreen(
                 primaryFocusRequester = heroFocusRequester,
                 onLiveClick = { onNavigate(Destination.Live) },
                 onSourceClick = onOpenSources,
+                onHeroFocus = bringHeroIntoView,
             )
         }
 
@@ -167,6 +178,7 @@ private fun HeroBanner(
     primaryFocusRequester: FocusRequester,
     onLiveClick: () -> Unit,
     onSourceClick: () -> Unit,
+    onHeroFocus: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -187,7 +199,7 @@ private fun HeroBanner(
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Cobalt.copy(alpha = 0.55f), Color.Transparent),
+                    colors = listOf(Cobalt.copy(alpha = 0.42f), Color.Transparent),
                     center = Offset(size.width * 0.78f, size.height * 0.15f),
                     radius = size.width * 0.42f,
                 ),
@@ -195,12 +207,12 @@ private fun HeroBanner(
                 center = Offset(size.width * 0.78f, size.height * 0.15f),
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.04f),
+                color = Color.White.copy(alpha = 0.03f),
                 radius = size.height * 0.62f,
                 center = Offset(size.width * 0.92f, size.height * 0.9f),
             )
             drawCircle(
-                color = Cobalt.copy(alpha = 0.12f),
+                color = Cobalt.copy(alpha = 0.08f),
                 radius = size.height * 0.38f,
                 center = Offset(size.width * 0.7f, size.height * 0.75f),
             )
@@ -236,12 +248,15 @@ private fun HeroBanner(
                     text = "Ver TV en directo",
                     onClick = onLiveClick,
                     icon = CobaltIcons.Play,
-                    modifier = Modifier.focusRequester(primaryFocusRequester),
+                    modifier = Modifier
+                        .focusRequester(primaryFocusRequester)
+                        .onFocusChanged { if (it.isFocused) onHeroFocus() },
                 )
                 CobaltButton(
                     text = "Añadir fuente",
                     onClick = onSourceClick,
                     style = CobaltButtonStyle.Secondary,
+                    modifier = Modifier.onFocusChanged { if (it.isFocused) onHeroFocus() },
                 )
             }
         }

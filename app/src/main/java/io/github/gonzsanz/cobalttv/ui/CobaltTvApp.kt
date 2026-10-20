@@ -147,16 +147,16 @@ private fun SideNav(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(108.dp)
+            .width(104.dp)
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.55f))
-            .padding(vertical = 26.dp),
+            .padding(vertical = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BrandMark()
-        Spacer(Modifier.height(26.dp))
+        Spacer(Modifier.height(14.dp))
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Destination.entries
@@ -188,19 +188,19 @@ private fun BrandMark() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(46.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(Brush.linearGradient(listOf(Cobalt, CobaltDeep)))
-                .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(14.dp)),
+                .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "C",
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
             text = "COBALT",
             style = MaterialTheme.typography.labelSmall.copy(
@@ -244,8 +244,8 @@ private fun SideNavItem(
 
     Column(
         modifier = Modifier
-            .width(86.dp)
-            .height(68.dp)
+            .width(84.dp)
+            .height(54.dp)
             .clip(shape)
             .background(background)
             .border(if (focused) 2.dp else 1.dp, borderColor, shape)
@@ -258,12 +258,12 @@ private fun SideNavItem(
             imageVector = icon,
             contentDescription = null,
             tint = contentColor,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(21.dp),
         )
-        Spacer(Modifier.height(5.dp))
+        Spacer(Modifier.height(3.dp))
         Text(
             text = destination.shortLabel,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
             color = contentColor,
             maxLines = 1,
         )

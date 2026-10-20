@@ -42,6 +42,7 @@ import androidx.tv.material3.Text
 import io.github.gonzsanz.cobalttv.core.designsystem.Cobalt
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltSoft
 import io.github.gonzsanz.cobalttv.core.designsystem.EmptyState
+import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
@@ -76,7 +77,7 @@ fun SearchScreen(onToast: (String) -> Unit) {
                     EmptyState(
                         icon = Icons.Filled.Search,
                         title = "¿Qué quieres ver?",
-                        description = "Pulsa OK sobre el campo de búsqueda para abrir el teclado en pantalla.",
+                        description = "Escribe el nombre de un canal, película o serie.",
                     )
                 }
             }
@@ -122,6 +123,8 @@ private fun SearchField(
     val focusRequester = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(16.dp)
+
+    InitialFocusEffect(focusRequester)
 
     Row(
         modifier = modifier
