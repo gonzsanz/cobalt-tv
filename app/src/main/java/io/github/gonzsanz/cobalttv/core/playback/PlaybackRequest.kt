@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.core.playback
+﻿package io.github.gonzsanz.cobalttv.core.playback
 
 /**
  * One channel available for zapping while a live stream is playing. It only
@@ -11,6 +11,8 @@ data class LiveChannel(
     val subtitle: String,
     val url: String,
     val epgId: String? = null,
+    val category: String = "",
+    val logoUrl: String? = null,
 )
 
 /**

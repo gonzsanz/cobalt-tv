@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.ui.model
+﻿package io.github.gonzsanz.cobalttv.ui.model
 
 import androidx.compose.ui.graphics.Color
 import io.github.gonzsanz.cobalttv.core.playback.LiveChannel
@@ -21,6 +21,7 @@ data class ChannelUi(
     val streamUrl: String,
     val isDemo: Boolean = false,
     val epgId: String? = null,
+    val logoUrl: String? = null,
 )
 
 private val accentPalette = listOf(
@@ -50,6 +51,7 @@ fun Channel.toUi(): ChannelUi = ChannelUi(
     accent = accentFor("$group|$name"),
     streamUrl = streamUrl,
     epgId = tvgId,
+    logoUrl = logoUrl,
 )
 
 fun DemoChannel.toUi(): ChannelUi = ChannelUi(
@@ -78,6 +80,8 @@ fun ChannelUi.toPlaybackRequest(
             subtitle = "${channel.category} · ${channel.nowPlaying}",
             url = channel.streamUrl,
             epgId = channel.epgId,
+            category = channel.category,
+            logoUrl = channel.logoUrl,
         )
     },
 )

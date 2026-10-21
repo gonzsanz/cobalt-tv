@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.ui.navigation
+﻿package io.github.gonzsanz.cobalttv.ui.navigation
 
 /**
  * Top level sections of the app. `Sources` is intentionally not here: it is
@@ -11,6 +11,7 @@ enum class Destination(
 ) {
     Home("home", "Inicio", "Inicio"),
     Live("live", "TV en directo", "TV"),
+    Guide("guide", "Guía de TV", "Guía"),
     Movies("movies", "Películas", "Películas"),
     Series("series", "Series", "Series"),
     Favorites("favorites", "Favoritos", "Favoritos"),

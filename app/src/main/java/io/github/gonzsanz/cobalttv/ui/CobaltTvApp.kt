@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.ui
+﻿package io.github.gonzsanz.cobalttv.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -57,9 +57,17 @@ import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
 import io.github.gonzsanz.cobalttv.data.catalog.CatalogRepository
 import io.github.gonzsanz.cobalttv.data.epg.EpgRepository
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.github.gonzsanz.cobalttv.core.playback.PlayerHolder
 import io.github.gonzsanz.cobalttv.data.favorites.FavoritesRepository
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
 import io.github.gonzsanz.cobalttv.feature.home.HomeScreen
+import io.github.gonzsanz.cobalttv.feature.guide.GuideScreen
 import io.github.gonzsanz.cobalttv.feature.live.LiveScreen
 import io.github.gonzsanz.cobalttv.feature.movies.MoviesScreen
 import io.github.gonzsanz.cobalttv.feature.player.PlayerScreen
@@ -94,11 +102,38 @@ fun CobaltTvApp() {
     val epg = remember(catalog) {
         EpgRepository(catalog)
     }
+    val playerHolder = remember(context.applicationContext) {
+        PlayerHolder(context.applicationContext)
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(playerHolder, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> playerHolder.onAppStop()
+                Lifecycle.Event.ON_START -> playerHolder.onAppStart()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            playerHolder.release()
+        }
+    }
+    // The preview and the player share one stream; leaving TV, Guide and the
+    // player must stop it so nothing keeps playing in the background.
+    LaunchedEffect(currentRoute) {
+        val keep = currentRoute == Destination.Live.route ||
+            currentRoute == Destination.Guide.route ||
+            currentRoute == Destination.PLAYER_ROUTE
+        if (!keep && currentRoute != null) playerHolder.stop()
+    }
 
     CompositionLocalProvider(
         LocalCatalog provides catalog,
         LocalFavorites provides favorites,
         LocalEpg provides epg,
+        LocalPlayer provides playerHolder,
     ) {
     Box(
         modifier = Modifier
@@ -115,7 +150,7 @@ fun CobaltTvApp() {
 
             NavHost(
                 navController = navController,
-                startDestination = Destination.Home.route,
+                startDestination = Destination.Live.route,
                 modifier = if (isPlayer) {
                     Modifier.fillMaxSize()
                 } else {
@@ -137,6 +172,9 @@ fun CobaltTvApp() {
                         onPlay = openPlayer,
                         onToast = toastState::show,
                     )
+                }
+                composable(Destination.Guide.route) {
+                    GuideScreen(onPlay = openPlayer)
                 }
                 composable(Destination.Movies.route) {
                     MoviesScreen(onPlay = openPlayer)
@@ -210,7 +248,7 @@ private fun SideNav(
         Spacer(Modifier.height(14.dp))
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Destination.entries
@@ -299,7 +337,7 @@ private fun SideNavItem(
     Column(
         modifier = Modifier
             .width(84.dp)
-            .height(54.dp)
+            .height(47.dp)
             .clip(shape)
             .background(background)
             .border(if (focused) 2.dp else 1.dp, borderColor, shape)
@@ -327,6 +365,7 @@ private fun SideNavItem(
 private fun iconFor(destination: Destination): ImageVector = when (destination) {
     Destination.Home -> Icons.Filled.Home
     Destination.Live -> CobaltIcons.LiveTv
+    Destination.Guide -> Icons.Filled.DateRange
     Destination.Movies -> CobaltIcons.Movies
     Destination.Series -> CobaltIcons.Series
     Destination.Favorites -> Icons.Filled.Favorite

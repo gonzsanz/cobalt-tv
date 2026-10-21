@@ -1,6 +1,18 @@
-package io.github.gonzsanz.cobalttv.feature.player
+﻿package io.github.gonzsanz.cobalttv.feature.player
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import io.github.gonzsanz.cobalttv.core.playback.LiveChannel
+import io.github.gonzsanz.cobalttv.ui.LocalPlayer
+import io.github.gonzsanz.cobalttv.ui.components.ChannelLogo
+import io.github.gonzsanz.cobalttv.ui.model.ChannelUi
+import io.github.gonzsanz.cobalttv.ui.model.accentFor
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -79,7 +91,6 @@ import io.github.gonzsanz.cobalttv.ui.model.rememberCurrentTimeMs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-private const val TAG = "CobaltPlayer"
 private const val SEEK_STEP_MS = 10_000L
 
 @Composable
@@ -94,31 +105,21 @@ fun PlayerScreen(onBack: () -> Unit) {
 
 @Composable
 private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                    .build(),
-                /* handleAudioFocus = */ true,
-            )
-            setHandleAudioBecomingNoisy(true)
-        }
-    }
+    val holder = LocalPlayer.current
+    val exoPlayer = holder.player
 
     var currentRequest by remember(request) { mutableStateOf(request) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var playbackState by remember { mutableIntStateOf(Player.STATE_IDLE) }
+    val isLive = currentRequest.isLive
+    val isPlaying = holder.isPlaying
+    val playbackState = holder.playbackState
+    val error = holder.error
     var positionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
-    var error by remember { mutableStateOf<PlaybackException?>(null) }
     var controlsVisible by remember { mutableStateOf(true) }
     var interactionTick by remember { mutableIntStateOf(0) }
-    var retryTick by remember { mutableIntStateOf(0) }
+    var listVisible by remember { mutableStateOf(false) }
+    var digits by remember { mutableStateOf("") }
+    var previousChannelId by remember { mutableStateOf<String?>(null) }
 
     val rootFocusRequester = remember { FocusRequester() }
     val playPauseFocusRequester = remember { FocusRequester() }
@@ -144,19 +145,14 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
         }
     }
 
-    val canZap = currentRequest.isLive && currentRequest.liveChannels.size > 1
-    val zapBy: (Int) -> Boolean = { direction ->
-        if (!canZap) {
+    val canZap = isLive && currentRequest.liveChannels.size > 1
+    val zapTo: (Int) -> Boolean = { index ->
+        val channels = currentRequest.liveChannels
+        val next = channels.getOrNull(index)
+        if (next == null || next.id == currentRequest.liveChannelId) {
             false
         } else {
-            val channels = currentRequest.liveChannels
-            val currentIndex = channels.indexOfFirst { it.id == currentRequest.liveChannelId }
-            val nextIndex = if (currentIndex == -1) {
-                0
-            } else {
-                (currentIndex + direction + channels.size) % channels.size
-            }
-            val next = channels[nextIndex]
+            previousChannelId = currentRequest.liveChannelId
             val nextRequest = currentRequest.copy(
                 title = next.title,
                 subtitle = next.subtitle,
@@ -171,60 +167,29 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
             true
         }
     }
-
-    DisposableEffect(exoPlayer, lifecycleOwner) {
-        val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(playing: Boolean) {
-                isPlaying = playing
+    val zapBy: (Int) -> Boolean = { direction ->
+        if (!canZap) {
+            false
+        } else {
+            val channels = currentRequest.liveChannels
+            val currentIndex = channels.indexOfFirst { it.id == currentRequest.liveChannelId }
+            val nextIndex = if (currentIndex == -1) {
+                0
+            } else {
+                (currentIndex + direction + channels.size) % channels.size
             }
-
-            override fun onPlaybackStateChanged(state: Int) {
-                playbackState = state
-                if (state == Player.STATE_ENDED) controlsVisible = true
-            }
-
-            override fun onPlayerError(playerError: PlaybackException) {
-                Log.e(
-                    TAG,
-                    "No se pudo reproducir el contenido (${playerError.errorCodeName})",
-                )
-                error = playerError
-                controlsVisible = true
-            }
-        }
-        exoPlayer.addListener(listener)
-
-        var resumeOnStart = false
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_STOP -> {
-                    resumeOnStart = exoPlayer.playWhenReady
-                    exoPlayer.pause()
-                }
-
-                Lifecycle.Event.ON_START -> {
-                    if (resumeOnStart) exoPlayer.play()
-                }
-
-                else -> Unit
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            exoPlayer.removeListener(listener)
-            exoPlayer.release()
+            zapTo(nextIndex)
         }
     }
 
-    LaunchedEffect(currentRequest.url, currentRequest.liveChannelId, retryTick) {
-        error = null
+    BackHandler {
+        if (listVisible) listVisible = false else onBack()
+    }
+
+    // Starts the stream unless the preview already loaded this very channel.
+    LaunchedEffect(currentRequest.url, currentRequest.liveChannelId) {
         controlsVisible = true
-        exoPlayer.stop()
-        exoPlayer.setMediaItem(MediaItem.fromUri(currentRequest.url))
-        exoPlayer.prepare()
-        exoPlayer.playWhenReady = true
+        holder.play(currentRequest.url, currentRequest.liveChannelId ?: currentRequest.url)
     }
 
     LaunchedEffect(exoPlayer) {
@@ -235,20 +200,27 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
         }
     }
 
-    // Keep focus on the controls while they are visible, and on the root while
-    // they are hidden so BACK and D-pad presses are still delivered to the player.
-    LaunchedEffect(controlsVisible, error) {
-        if (error != null) return@LaunchedEffect
-        if (controlsVisible) {
+    LaunchedEffect(error) {
+        if (error != null) controlsVisible = true
+    }
+    LaunchedEffect(playbackState) {
+        if (playbackState == Player.STATE_ENDED) controlsVisible = true
+    }
+
+    // Live keeps focus on the root (the banner has nothing to focus); VOD
+    // moves it to the controls while they are visible.
+    LaunchedEffect(controlsVisible, error, listVisible, isLive) {
+        if (error != null || listVisible) return@LaunchedEffect
+        if (isLive || !controlsVisible) {
+            delay(30)
+            runCatching { rootFocusRequester.requestFocus() }
+        } else {
             repeat(5) {
                 delay(80)
                 if (runCatching { playPauseFocusRequester.requestFocus() }.isSuccess) {
                     return@LaunchedEffect
                 }
             }
-        } else {
-            delay(30)
-            runCatching { rootFocusRequester.requestFocus() }
         }
     }
 
@@ -260,7 +232,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
     }
 
     LaunchedEffect(playbackState) {
-        if (playbackState == Player.STATE_ENDED) {
+        if (playbackState == Player.STATE_ENDED && !isLive) {
             repeat(5) {
                 delay(80)
                 if (runCatching { playPauseFocusRequester.requestFocus() }.isSuccess) {
@@ -270,11 +242,24 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
         }
     }
 
-    LaunchedEffect(controlsVisible, isPlaying, interactionTick, error) {
-        if (controlsVisible && isPlaying && error == null) {
+    LaunchedEffect(controlsVisible, isPlaying, interactionTick, error, listVisible) {
+        if (!controlsVisible || error != null || listVisible) return@LaunchedEffect
+        if (isLive) {
+            delay(4_000)
+            controlsVisible = false
+        } else if (isPlaying) {
             delay(5_000)
             controlsVisible = false
         }
+    }
+
+    // Typing a channel number: jump after a short pause without more digits.
+    LaunchedEffect(digits) {
+        if (digits.isEmpty()) return@LaunchedEffect
+        delay(1_500)
+        val number = digits.toIntOrNull()
+        digits = ""
+        if (number != null) zapTo(number - 1)
     }
 
     Box(
@@ -282,9 +267,10 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
             .fillMaxSize()
             .background(Color.Black)
             .focusRequester(rootFocusRequester)
-            .focusProperties { canFocus = !controlsVisible && error == null }
+            .focusProperties { canFocus = error == null && !listVisible && (isLive || !controlsVisible) }
             .focusable()
             .onPreviewKeyEvent { event ->
+                if (listVisible) return@onPreviewKeyEvent false
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
 
                 val nativeKeyCode = event.nativeKeyEvent.keyCode
@@ -294,6 +280,26 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                 }
                 if (nativeKeyCode == AndroidKeyEvent.KEYCODE_CHANNEL_DOWN) {
                     return@onPreviewKeyEvent if (isRepeat && canZap) true else zapBy(-1)
+                }
+                if (isLive) {
+                    val digit = digitFor(nativeKeyCode)
+                    if (digit != null) {
+                        if (digits.length < 4) digits += digit
+                        return@onPreviewKeyEvent true
+                    }
+                    when (nativeKeyCode) {
+                        AndroidKeyEvent.KEYCODE_LAST_CHANNEL -> {
+                            val index = currentRequest.liveChannels
+                                .indexOfFirst { it.id == previousChannelId }
+                            return@onPreviewKeyEvent if (index >= 0) zapTo(index) else true
+                        }
+
+                        AndroidKeyEvent.KEYCODE_INFO, AndroidKeyEvent.KEYCODE_MENU -> {
+                            controlsVisible = true
+                            interactionTick++
+                            return@onPreviewKeyEvent true
+                        }
+                    }
                 }
 
                 when (event.key) {
@@ -322,7 +328,10 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                     }
 
                     Key.DirectionCenter, Key.Enter -> {
-                        if (!controlsVisible) {
+                        if (isLive) {
+                            if (currentRequest.liveChannels.isNotEmpty()) listVisible = true
+                            true
+                        } else if (!controlsVisible) {
                             controlsVisible = true
                             togglePlayPause()
                             true
@@ -364,10 +373,21 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                         true
                     }
 
-                    Key.DirectionLeft, Key.DirectionRight -> {
+                    Key.DirectionLeft -> {
+                        if (isLive && currentRequest.liveChannels.isNotEmpty()) {
+                            listVisible = true
+                            true
+                        } else {
+                            if (!controlsVisible) controlsVisible = true
+                            interactionTick++
+                            false
+                        }
+                    }
+
+                    Key.DirectionRight -> {
                         if (!controlsVisible) controlsVisible = true
                         interactionTick++
-                        false
+                        isLive
                     }
 
                     else -> false
@@ -391,9 +411,9 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
 
         when {
             error != null -> ErrorPanel(
-                message = friendlyMessage(error!!),
+                message = friendlyMessage(error),
                 onRetry = {
-                    retryTick++
+                    holder.reload()
                     interactionTick++
                 },
                 onBack = onBack,
@@ -407,7 +427,38 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                     BufferingOverlay()
                 }
 
-                if (controlsVisible) {
+                if (isLive) {
+                    if (controlsVisible && !listVisible) {
+                        LiveBanner(
+                            request = currentRequest,
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                        )
+                    }
+                    if (digits.isNotEmpty()) {
+                        Text(
+                            text = digits,
+                            style = MaterialTheme.typography.displayMedium,
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(40.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color.Black.copy(alpha = 0.6f))
+                                .padding(horizontal = 24.dp, vertical = 10.dp),
+                        )
+                    }
+                    if (listVisible) {
+                        ChannelListOverlay(
+                            channels = currentRequest.liveChannels,
+                            currentId = currentRequest.liveChannelId,
+                            onSelect = { index ->
+                                listVisible = false
+                                zapTo(index)
+                            },
+                            modifier = Modifier.align(Alignment.CenterStart),
+                        )
+                    }
+                } else if (controlsVisible) {
                     PlayerTopBar(
                         request = currentRequest,
                         modifier = Modifier.align(Alignment.TopCenter),
@@ -423,6 +474,255 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                         playPauseFocusRequester = playPauseFocusRequester,
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
+                }
+            }
+        }
+    }
+}
+
+private fun digitFor(keyCode: Int): Int? = when (keyCode) {
+    in AndroidKeyEvent.KEYCODE_0..AndroidKeyEvent.KEYCODE_9 -> keyCode - AndroidKeyEvent.KEYCODE_0
+    in AndroidKeyEvent.KEYCODE_NUMPAD_0..AndroidKeyEvent.KEYCODE_NUMPAD_9 ->
+        keyCode - AndroidKeyEvent.KEYCODE_NUMPAD_0
+    else -> null
+}
+
+private fun LiveChannel.toUi(): ChannelUi = ChannelUi(
+    id = id,
+    name = title,
+    category = category,
+    nowPlaying = "",
+    accent = accentFor("$category|$title"),
+    streamUrl = url,
+    epgId = epgId,
+    logoUrl = logoUrl,
+)
+
+@Composable
+private fun LiveBanner(request: PlaybackRequest, modifier: Modifier = Modifier) {
+    val epg by LocalEpg.current.state.collectAsState()
+    val nowMs = rememberCurrentTimeMs(intervalMs = 15_000L)
+    val index = request.liveChannels.indexOfFirst { it.id == request.liveChannelId }
+    val channel = request.liveChannels.getOrNull(index)?.toUi() ?: ChannelUi(
+        id = request.liveChannelId ?: request.url,
+        name = request.title,
+        category = "",
+        nowPlaying = "",
+        accent = accentFor(request.title),
+        streamUrl = request.url,
+        epgId = request.epgId,
+    )
+    val nowNext = if (epg.status == EpgStatus.Ready) epg.nowNext(request.epgId, nowMs) else null
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.92f))),
+            )
+            .padding(start = 48.dp, end = 48.dp, top = 56.dp, bottom = 32.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        ChannelLogo(channel = channel, size = 64.dp)
+        Spacer(Modifier.width(18.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (index >= 0) {
+                    Text(
+                        text = "${index + 1}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = CobaltSoft,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                }
+                Text(
+                    text = request.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            val now = nowNext?.now
+            Text(
+                text = when {
+                    now != null -> now.title
+                    epg.status == EpgStatus.Ready -> "Sin programación"
+                    else -> "En directo"
+                },
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (now != null) {
+                Spacer(Modifier.height(6.dp))
+                val total = (now.stopMs - now.startMs).coerceAtLeast(1L)
+                val fraction = ((nowMs - now.startMs).toFloat() / total).coerceIn(0f, 1f)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = timeFormat.format(Date(now.startMs)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.75f),
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.White.copy(alpha = 0.22f)),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(fraction)
+                                .background(CobaltSoft),
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = timeFormat.format(Date(now.stopMs)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.75f),
+                    )
+                }
+            }
+            nowNext?.next?.let { next ->
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Después · ${timeFormat.format(Date(next.startMs))}  ${next.title}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Spacer(Modifier.width(24.dp))
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = timeFormat.format(Date(nowMs)),
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "↑↓ canal · OK lista · 0-9 número",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.55f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChannelListOverlay(
+    channels: List<LiveChannel>,
+    currentId: String?,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val epg by LocalEpg.current.state.collectAsState()
+    val nowMs = rememberCurrentTimeMs()
+    val currentIndex = remember(channels, currentId) {
+        channels.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
+    }
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = (currentIndex - 3).coerceAtLeast(0),
+    )
+    val currentFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        repeat(8) {
+            delay(60)
+            if (runCatching { currentFocus.requestFocus() }.isSuccess) return@LaunchedEffect
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .width(360.dp)
+            .fillMaxHeight()
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color.Black.copy(alpha = 0.92f), Color.Black.copy(alpha = 0.78f)),
+                ),
+            )
+            .padding(top = 28.dp, start = 16.dp, end = 16.dp),
+    ) {
+        Text(
+            text = "Canales",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White,
+            modifier = Modifier.padding(start = 6.dp, bottom = 10.dp),
+        )
+        LazyColumn(
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            itemsIndexed(channels, key = { _, channel -> channel.id }) { index, channel ->
+                var focused by remember { mutableStateOf(false) }
+                val ui = remember(channel) { channel.toUi() }
+                val programme = if (epg.status == EpgStatus.Ready) {
+                    epg.nowNext(channel.epgId, nowMs)?.now?.title
+                } else {
+                    null
+                }
+                val shape = RoundedCornerShape(10.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .clip(shape)
+                        .background(
+                            when {
+                                focused -> Color.White.copy(alpha = 0.2f)
+                                channel.id == currentId -> Color.White.copy(alpha = 0.08f)
+                                else -> Color.Transparent
+                            },
+                        )
+                        .border(
+                            if (focused) 2.dp else 0.dp,
+                            if (focused) Color.White else Color.Transparent,
+                            shape,
+                        )
+                        .then(
+                            if (index == currentIndex) Modifier.focusRequester(currentFocus) else Modifier,
+                        )
+                        .onFocusChanged { focused = it.isFocused }
+                        .clickable { onSelect(index) }
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "${index + 1}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier.width(30.dp),
+                    )
+                    ChannelLogo(channel = ui, size = 36.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = channel.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (programme != null) {
+                            Text(
+                                text = programme,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.6f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
                 }
             }
         }
