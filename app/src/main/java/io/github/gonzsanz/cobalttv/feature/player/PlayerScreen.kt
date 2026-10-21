@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -72,6 +73,9 @@ import io.github.gonzsanz.cobalttv.core.designsystem.Graphite
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
+import io.github.gonzsanz.cobalttv.data.epg.EpgStatus
+import io.github.gonzsanz.cobalttv.ui.LocalEpg
+import io.github.gonzsanz.cobalttv.ui.model.rememberCurrentTimeMs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -158,6 +162,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                 subtitle = next.subtitle,
                 url = next.url,
                 liveChannelId = next.id,
+                epgId = next.epgId,
             )
             currentRequest = nextRequest
             PlaybackSession.current = nextRequest
@@ -427,6 +432,11 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
 @Composable
 private fun PlayerTopBar(request: PlaybackRequest, modifier: Modifier = Modifier) {
     val channelIndex = request.liveChannels.indexOfFirst { it.id == request.liveChannelId }
+    val epgRepo = LocalEpg.current
+    val epg by epgRepo.state.collectAsState()
+    val nowMs = rememberCurrentTimeMs()
+    val guideReady = request.isLive && epg.status == EpgStatus.Ready
+    val nowNext = if (guideReady) epg.nowNext(request.epgId, nowMs) else null
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -454,6 +464,20 @@ private fun PlayerTopBar(request: PlaybackRequest, modifier: Modifier = Modifier
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (guideReady) {
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = buildString {
+                        append("Ahora: ")
+                        append(nowNext?.now?.title ?: "sin programación")
+                        nowNext?.next?.let { append("   ·   Después: ${it.title}") }
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         if (request.isLive && channelIndex >= 0 && request.liveChannels.size > 1) {
             Text(

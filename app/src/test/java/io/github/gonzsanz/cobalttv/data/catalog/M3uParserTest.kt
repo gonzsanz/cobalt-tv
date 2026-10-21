@@ -147,4 +147,47 @@ class M3uParserTest {
         assertTrue(M3uParser.parse("").isEmpty())
         assertTrue(M3uParser.parse("#EXTM3U\n# solo comentarios").isEmpty())
     }
+
+    @Test
+    fun `reads the XMLTV guide url from the header`() {
+        val playlist = """
+            #EXTM3U url-tvg="https://epg.example/guide.xml"
+            #EXTINF:-1 tvg-id="cine.1",Cine Uno
+            https://stream.example/cine1.m3u8
+        """.trimIndent()
+
+        val parsed = M3uParser.parsePlaylist(playlist)
+
+        assertEquals("https://epg.example/guide.xml", parsed.epgUrl)
+        assertEquals(1, parsed.channels.size)
+    }
+
+    @Test
+    fun `falls back to x-tvg-url and ignores non-http guides`() {
+        val playlist = """
+            #EXTM3U x-tvg-url="guia-local.xml, https://epg.example/guide.xml"
+            #EXTINF:-1,Canal
+            https://stream.example/canal.m3u8
+        """.trimIndent()
+
+        assertEquals("https://epg.example/guide.xml", M3uParser.parsePlaylist(playlist).epgUrl)
+    }
+
+    @Test
+    fun `accepts whitespace-separated guide urls and uppercase header keys`() {
+        val playlist = """
+            #EXTM3U X-TVG-URL="https://epg.example/guide.xml https://epg.example/backup.xml"
+            #EXTINF:-1,Canal
+            https://stream.example/canal.m3u8
+        """.trimIndent()
+
+        assertEquals("https://epg.example/guide.xml", M3uParser.parsePlaylist(playlist).epgUrl)
+    }
+
+    @Test
+    fun `playlists without a guide expose no epg url`() {
+        val playlist = "#EXTM3U\n#EXTINF:-1,Canal\nhttps://stream.example/canal.m3u8"
+
+        assertNull(M3uParser.parsePlaylist(playlist).epgUrl)
+    }
 }

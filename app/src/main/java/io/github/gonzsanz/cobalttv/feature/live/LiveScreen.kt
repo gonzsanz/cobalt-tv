@@ -32,11 +32,16 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.epg.EpgStatus
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.LocalEpg
 import io.github.gonzsanz.cobalttv.ui.LocalFavorites
 import io.github.gonzsanz.cobalttv.ui.components.ChannelGrid
 import io.github.gonzsanz.cobalttv.ui.model.ChannelUi
 import io.github.gonzsanz.cobalttv.ui.model.channelCountLabel
+import io.github.gonzsanz.cobalttv.ui.model.epgNowTitles
+import io.github.gonzsanz.cobalttv.ui.model.guideStatusLabel
+import io.github.gonzsanz.cobalttv.ui.model.rememberCurrentTimeMs
 import io.github.gonzsanz.cobalttv.ui.model.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.model.toUi
 import kotlinx.coroutines.delay
@@ -49,6 +54,9 @@ fun LiveScreen(
     val catalog by LocalCatalog.current.state.collectAsState()
     val favoritesRepo = LocalFavorites.current
     val favorites by favoritesRepo.favorites.collectAsState()
+    val epgRepo = LocalEpg.current
+    val epg by epgRepo.state.collectAsState()
+    val nowMs = rememberCurrentTimeMs()
     val hasRealChannels = catalog.channels.isNotEmpty()
 
     val categories = remember(hasRealChannels, catalog.channels) {
@@ -86,6 +94,10 @@ fun LiveScreen(
             allChannels.filter { it.category == selectedCategory }
         }
     }
+    val epgReady = epg.status == EpgStatus.Ready
+    val epgNowByChannel = remember(channels, epg, nowMs) {
+        channels.epgNowTitles(epg, nowMs)
+    }
 
     val firstChipFocusRequester = remember { FocusRequester() }
     LaunchedEffect(categories.size, catalog.isLoading) {
@@ -103,7 +115,8 @@ fun LiveScreen(
             title = "TV en directo",
             subtitle = when {
                 hasRealChannels && catalog.source != null ->
-                    "${channelCountLabel(catalog.channels.size)} de «${catalog.source?.name}»."
+                    "${channelCountLabel(catalog.channels.size)} de «${catalog.source?.name}». " +
+                        "${epg.guideStatusLabel()}."
                 hasRealChannels -> if (catalog.channels.size == 1) {
                     "1 canal importado."
                 } else {
@@ -163,6 +176,8 @@ fun LiveScreen(
                 val added = favoritesRepo.toggle(channel.id)
                 onToast(if (added) "Añadido a favoritos" else "Quitado de favoritos")
             },
+            epgNowTitles = epgNowByChannel,
+            epgReady = epgReady,
             modifier = Modifier.weight(1f),
         )
 

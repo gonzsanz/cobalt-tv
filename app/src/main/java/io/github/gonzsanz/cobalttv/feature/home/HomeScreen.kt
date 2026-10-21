@@ -49,10 +49,13 @@ import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
 import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.LocalEpg
 import io.github.gonzsanz.cobalttv.ui.LocalFavorites
 import io.github.gonzsanz.cobalttv.ui.components.ChannelCard
 import io.github.gonzsanz.cobalttv.ui.components.ContinueWatchingCard
 import io.github.gonzsanz.cobalttv.ui.components.PosterCard
+import io.github.gonzsanz.cobalttv.ui.model.epgNowTitle
+import io.github.gonzsanz.cobalttv.ui.model.rememberCurrentTimeMs
 import io.github.gonzsanz.cobalttv.ui.model.toPlaybackRequest as channelToPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.model.toUi
 import io.github.gonzsanz.cobalttv.ui.navigation.Destination
@@ -70,6 +73,9 @@ fun HomeScreen(
     val catalog by LocalCatalog.current.state.collectAsState()
     val favoritesRepo = LocalFavorites.current
     val favorites by favoritesRepo.favorites.collectAsState()
+    val epgRepo = LocalEpg.current
+    val epg by epgRepo.state.collectAsState()
+    val nowMs = rememberCurrentTimeMs()
     val hasRealChannels = catalog.channels.isNotEmpty()
     val allChannels = remember(hasRealChannels, catalog.channels) {
         if (hasRealChannels) {
@@ -141,6 +147,7 @@ fun HomeScreen(
                     ChannelCard(
                         channel = channel,
                         onClick = { onPlay(channel.channelToPlaybackRequest(allChannels)) },
+                        epgNow = channel.epgNowTitle(epg, nowMs),
                         isFavorite = channel.id in favorites,
                         onLongClick = {
                             val added = favoritesRepo.toggle(channel.id)
@@ -199,7 +206,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Cobalt TV 0.3.0 · Fase 3 · Listas M3U · Contenido de demostración",
+                    text = "Cobalt TV 0.4.0 · Fase 4 · Listas M3U + EPG · Contenido de demostración",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted,
                 )

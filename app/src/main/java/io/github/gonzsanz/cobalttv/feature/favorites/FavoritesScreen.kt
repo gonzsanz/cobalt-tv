@@ -27,9 +27,13 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.epg.EpgStatus
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.LocalEpg
 import io.github.gonzsanz.cobalttv.ui.LocalFavorites
 import io.github.gonzsanz.cobalttv.ui.components.ChannelGrid
+import io.github.gonzsanz.cobalttv.ui.model.epgNowTitles
+import io.github.gonzsanz.cobalttv.ui.model.rememberCurrentTimeMs
 import io.github.gonzsanz.cobalttv.ui.model.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.model.toUi
 import kotlinx.coroutines.delay
@@ -43,6 +47,9 @@ fun FavoritesScreen(
     val catalog by LocalCatalog.current.state.collectAsState()
     val favoritesRepo = LocalFavorites.current
     val favorites by favoritesRepo.favorites.collectAsState()
+    val epgRepo = LocalEpg.current
+    val epg by epgRepo.state.collectAsState()
+    val nowMs = rememberCurrentTimeMs()
 
     val realChannels = remember(catalog.channels) {
         catalog.channels.map { it.toUi() }
@@ -57,6 +64,10 @@ fun FavoritesScreen(
         availableChannels.filter { it.id in favorites }
     }
     val unavailableCount = (favorites.size - favoriteChannels.size).coerceAtLeast(0)
+    val epgReady = epg.status == EpgStatus.Ready
+    val epgNowByChannel = remember(favoriteChannels, epg, nowMs) {
+        favoriteChannels.epgNowTitles(epg, nowMs)
+    }
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(
@@ -139,6 +150,8 @@ fun FavoritesScreen(
                         onToast("Quitado de favoritos")
                     },
                     firstItemFocusRequester = firstCardFocusRequester,
+                    epgNowTitles = epgNowByChannel,
+                    epgReady = epgReady,
                     modifier = Modifier.weight(1f),
                 )
                 if (unavailableCount > 0) {

@@ -20,6 +20,8 @@ data class PlaylistSource(
     val location: String,
     val channelCount: Int,
     val importedAt: Long,
+    /** XMLTV guide URL declared by the playlist header, if any. */
+    val epgUrl: String? = null,
 )
 
 data class CatalogState(

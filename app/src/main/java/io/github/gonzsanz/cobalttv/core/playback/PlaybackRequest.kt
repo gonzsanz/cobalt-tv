@@ -10,6 +10,7 @@ data class LiveChannel(
     val title: String,
     val subtitle: String,
     val url: String,
+    val epgId: String? = null,
 )
 
 /**
@@ -26,6 +27,7 @@ data class PlaybackRequest(
     val url: String,
     val isLive: Boolean = false,
     val liveChannelId: String? = null,
+    val epgId: String? = null,
     val liveChannels: List<LiveChannel> = emptyList(),
 )
 

@@ -56,6 +56,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.ToastState
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
 import io.github.gonzsanz.cobalttv.data.catalog.CatalogRepository
+import io.github.gonzsanz.cobalttv.data.epg.EpgRepository
 import io.github.gonzsanz.cobalttv.data.favorites.FavoritesRepository
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
 import io.github.gonzsanz.cobalttv.feature.home.HomeScreen
@@ -90,10 +91,14 @@ fun CobaltTvApp() {
     val favorites = remember(context.applicationContext) {
         FavoritesRepository(context.applicationContext)
     }
+    val epg = remember(catalog) {
+        EpgRepository(catalog)
+    }
 
     CompositionLocalProvider(
         LocalCatalog provides catalog,
         LocalFavorites provides favorites,
+        LocalEpg provides epg,
     ) {
     Box(
         modifier = Modifier

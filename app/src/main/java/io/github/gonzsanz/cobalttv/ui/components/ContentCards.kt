@@ -122,6 +122,7 @@ fun ChannelCard(
     modifier: Modifier = Modifier,
     isFavorite: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    epgNow: String? = null,
 ) {
     FocusableSurface(
         onClick = onClick,
@@ -162,7 +163,7 @@ fun ChannelCard(
             }
             Spacer(Modifier.weight(1f))
             Text(
-                text = channel.nowPlaying,
+                text = epgNow ?: channel.nowPlaying,
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 maxLines = 1,
@@ -316,6 +317,8 @@ fun ChannelGrid(
     favoriteIds: Set<String> = emptySet(),
     onChannelLongClick: ((ChannelUi) -> Unit)? = null,
     firstItemFocusRequester: FocusRequester? = null,
+    epgNowTitles: Map<String, String> = emptyMap(),
+    epgReady: Boolean = false,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 240.dp),
@@ -339,6 +342,11 @@ fun ChannelGrid(
                 isFavorite = channel.id in favoriteIds,
                 onLongClick = onChannelLongClick?.let { callback ->
                     { callback(channel) }
+                },
+                epgNow = if (epgReady) {
+                    epgNowTitles[channel.id] ?: "Sin programación"
+                } else {
+                    null
                 },
                 modifier = if (index == 0 && firstItemFocusRequester != null) {
                     Modifier.focusRequester(firstItemFocusRequester)

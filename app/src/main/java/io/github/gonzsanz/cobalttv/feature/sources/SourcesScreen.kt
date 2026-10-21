@@ -69,8 +69,11 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.core.designsystem.WarningAmber
 import io.github.gonzsanz.cobalttv.data.catalog.PlaylistSource
 import io.github.gonzsanz.cobalttv.data.catalog.SourceKind
+import io.github.gonzsanz.cobalttv.data.epg.EpgStatus
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.LocalEpg
 import io.github.gonzsanz.cobalttv.ui.model.channelCountLabel
+import io.github.gonzsanz.cobalttv.ui.model.shortStatusLabel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -80,7 +83,15 @@ import kotlinx.coroutines.delay
 fun SourcesScreen(onOpenLive: () -> Unit) {
     val catalog = LocalCatalog.current
     val state by catalog.state.collectAsState()
+    val epg by LocalEpg.current.state.collectAsState()
     val source = state.source
+    val epgLabel = when {
+        source?.epgUrl == null ->
+            "Sin guía EPG: la lista no declara url-tvg."
+        epg.status == EpgStatus.Unavailable ->
+            "Guía EPG: sin canales con tvg-id."
+        else -> "Guía EPG: ${epg.shortStatusLabel()}."
+    }
 
     var url by rememberSaveable { mutableStateOf("") }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -151,6 +162,7 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
                 item {
                     ActiveSourceCard(
                         source = source,
+                        epgLabel = epgLabel,
                         isLoading = state.isLoading,
                         confirmDelete = confirmDelete,
                         watchFocusRequester = watchFocusRequester,
@@ -220,6 +232,7 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
 @Composable
 private fun ActiveSourceCard(
     source: PlaylistSource,
+    epgLabel: String,
     isLoading: Boolean,
     confirmDelete: Boolean,
     watchFocusRequester: FocusRequester,
@@ -289,6 +302,14 @@ private fun ActiveSourceCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = epgLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             if (isLoading) {
                 CobaltSpinner(size = 20.dp, strokeWidth = 3.dp)

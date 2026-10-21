@@ -14,17 +14,26 @@ import java.security.MessageDigest
  * It is deliberately free of Android classes so it can be unit tested on the
  * JVM without Robolectric.
  */
+data class ParsedPlaylist(
+    val channels: List<Channel>,
+    /** XMLTV guide URL declared by the #EXTM3U header, if any. */
+    val epgUrl: String? = null,
+)
+
 object M3uParser {
 
     private val attributeRegex = Regex(
         """([A-Za-z0-9_.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s]+))""",
     )
 
-    fun parse(rawText: String): List<Channel> {
+    fun parse(rawText: String): List<Channel> = parsePlaylist(rawText).channels
+
+    fun parsePlaylist(rawText: String): ParsedPlaylist {
         val text = rawText.removePrefix("\uFEFF")
         val channels = ArrayList<Channel>()
         val seen = HashSet<String>()
         var pending: PendingEntry? = null
+        var epgUrl: String? = null
 
         for (rawLine in text.lineSequence()) {
             val line = rawLine.trim()
@@ -35,13 +44,21 @@ object M3uParser {
                     pending = parseExtInf(line.substringAfter(':'))
                 }
 
+                line.startsWith("#EXTM3U", ignoreCase = true) -> {
+                    if (epgUrl == null) {
+                        val attributes = parseAttributes(line.substringAfter(' '))
+                        epgUrl = firstHttpUrl(attributes["url-tvg"])
+                            ?: firstHttpUrl(attributes["x-tvg-url"])
+                    }
+                }
+
                 line.startsWith("#EXTGRP:", ignoreCase = true) -> {
                     val group = line.substringAfter(':').trim()
                     if (group.isNotEmpty()) pending?.group = group
                 }
 
                 line.startsWith("#") -> {
-                    // #EXTM3U, #EXTVLCOPT, #KODIPROP, #PLAYLIST... not needed yet.
+                    // #EXTVLCOPT, #KODIPROP, #PLAYLIST... not needed yet.
                 }
 
                 else -> {
@@ -73,8 +90,17 @@ object M3uParser {
             }
         }
 
-        return channels
+        return ParsedPlaylist(channels = channels, epgUrl = epgUrl)
     }
+
+    private fun firstHttpUrl(value: String?): String? = value
+        ?.split(',', ' ', '\t', '\n')
+        ?.asSequence()
+        ?.map { it.trim() }
+        ?.firstOrNull {
+            it.startsWith("http://", ignoreCase = true) ||
+                it.startsWith("https://", ignoreCase = true)
+        }
 
     private fun parseExtInf(header: String): PendingEntry {
         val (attributePart, rawName) = splitName(header)

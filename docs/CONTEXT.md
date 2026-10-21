@@ -87,7 +87,7 @@
 >   de probar en la Mi Box (Fase 8).
 > - No se registran URLs ni credenciales en los logs.
 >
-> **Fase 4 en curso (2026-10-21)**
+> **Fase 4 completada (2026-10-21)**
 >
 > - Favoritos de canales persistentes en `SharedPreferences` `cobalt_favorites`
 >   (clave `channel_ids`), guardados por el ID estable del canal. Mantener OK en
@@ -102,16 +102,26 @@
 >   Inicio o Favoritos), con vuelta circular; el reproductor no se recrea. El
 >   contador "n / total" y una pista en los controles muestran el contexto. En VOD
 >   las flechas no cambian de contenido.
-> - Verificación en emulador API 36: favoritos con pulsación larga (toast,
->   corazón, persistencia tras force-stop), pantalla Favoritos con 1 y 2 canales,
->   borrado de fuente → "Favoritos no disponibles", reimportación → favorito
->   restaurado, zapping 1/8 → 2/8, CH+/CH−, lista filtrada de 2 canales con vuelta
->   circular, zapping desde Inicio y Favoritos, y VOD sin zapping. Mantener la
->   flecha no encadena saltos. `assembleDebug`, tests y `assembleRelease` con R8
->   en verde.
-> - Pendiente de la Fase 4: EPG/XMLTV con ahora/siguiente. La versión visible
->   sigue siendo 0.3.0/Fase 3 hasta cerrar la fase; al terminarla subirá a
->   0.4.0/Fase 4.
+> - EPG/XMLTV opcional. `M3uParser` extrae `url-tvg` o `x-tvg-url` del encabezado
+>   y lo persiste con la fuente; `EpgRepository` descarga la guía al importar,
+>   actualizar o arrancar, con límite de 32 MB y sin registrar su URL.
+>   `EpgParser` usa SAX, descarta DTD/entidades externas, filtra solo los
+>   `tvg-id` activos y una ventana de 24 h, y limita el título y el número de
+>   programas. El estado vive en memoria y se expone por `LocalEpg`.
+> - UI de la guía: programa actual en las tarjetas de Inicio, TV y Favoritos;
+>   estado de la guía en la cabecera de TV y en la tarjeta de Fuentes; línea
+>   Ahora/Después en el reproductor en directo, actualizada al cambiar de canal
+>   con zapping. Si no hay guía se usa "En directo"; si falta un programa se
+>   muestra "Sin programación"; si la descarga falla, "Guía EPG no disponible".
+>   En VOD no se muestra información de EPG.
+> - Verificación en emulador API 36 con un servidor XMLTV local y una lista con
+>   `url-tvg`: 8 canales con ahora/siguiente en TV, Inicio, Favoritos y
+>   reproductor; zapping 1/8 → 2/8 y 2/2 → 1/2 con actualización de la guía;
+>   canal ausente en la guía → "Sin programación"; HTTP 500 de la guía → estado
+>   de error y tarjetas en "En directo"; lista sin `url-tvg` → "Sin guía EPG";
+>   recuperación tras reiniciar la app; VOD sin línea de EPG. 19 tests unitarios
+>   (M3U y XMLTV), `assembleDebug` y `assembleRelease` con R8 en verde.
+> - Versión visible: **0.4.0 / Fase 4**. Siguiente fase: Xtream Codes.
 
 # CONTEXT.md --- Proyecto de app IPTV para Android TV
 

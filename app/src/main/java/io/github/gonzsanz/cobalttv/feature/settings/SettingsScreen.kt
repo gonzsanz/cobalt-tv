@@ -93,7 +93,7 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     title = "Acerca de Cobalt TV",
-                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 3",
+                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 4",
                     icon = Icons.Filled.Info,
                     onClick = { onToast("Cobalt TV ${BuildConfig.VERSION_NAME}, uso personal.") },
                 )

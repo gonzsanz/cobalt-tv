@@ -134,7 +134,8 @@ class CatalogRepository(context: Context) {
 
         try {
             val text = readCache() ?: throw CatalogException("No se encontró la lista guardada.")
-            val channels = M3uParser.parse(text)
+            val playlist = M3uParser.parsePlaylist(text)
+            val channels = playlist.channels
             if (channels.isEmpty()) throw CatalogException("La lista guardada está vacía.")
             val name = prefs.getString(KEY_NAME, null)
                 ?.takeIf { it.isNotBlank() }
@@ -146,6 +147,7 @@ class CatalogRepository(context: Context) {
                     location = location,
                     channelCount = channels.size,
                     importedAt = prefs.getLong(KEY_IMPORTED_AT, 0L),
+                    epgUrl = playlist.epgUrl,
                 ),
                 channels = channels,
                 isLoading = false,
@@ -166,7 +168,8 @@ class CatalogRepository(context: Context) {
         location: String,
         text: String,
     ) {
-        val channels = M3uParser.parse(text)
+        val playlist = M3uParser.parsePlaylist(text)
+        val channels = playlist.channels
         if (channels.isEmpty()) {
             throw CatalogException("La lista no contiene canales compatibles.")
         }
@@ -189,6 +192,7 @@ class CatalogRepository(context: Context) {
                 location = location,
                 channelCount = channels.size,
                 importedAt = importedAt,
+                epgUrl = playlist.epgUrl,
             ),
             channels = channels,
             isLoading = false,

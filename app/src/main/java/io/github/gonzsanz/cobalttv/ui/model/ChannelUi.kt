@@ -20,6 +20,7 @@ data class ChannelUi(
     val accent: Color,
     val streamUrl: String,
     val isDemo: Boolean = false,
+    val epgId: String? = null,
 )
 
 private val accentPalette = listOf(
@@ -48,6 +49,7 @@ fun Channel.toUi(): ChannelUi = ChannelUi(
     nowPlaying = "En directo",
     accent = accentFor("$group|$name"),
     streamUrl = streamUrl,
+    epgId = tvgId,
 )
 
 fun DemoChannel.toUi(): ChannelUi = ChannelUi(
@@ -68,12 +70,14 @@ fun ChannelUi.toPlaybackRequest(
     url = streamUrl,
     isLive = true,
     liveChannelId = id,
+    epgId = epgId,
     liveChannels = zapChannels.map { channel ->
         LiveChannel(
             id = channel.id,
             title = channel.name,
             subtitle = "${channel.category} · ${channel.nowPlaying}",
             url = channel.streamUrl,
+            epgId = channel.epgId,
         )
     },
 )
