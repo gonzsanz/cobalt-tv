@@ -428,8 +428,8 @@ fun InitialFocusEffect(focusRequester: FocusRequester) {
     LaunchedEffect(focusRequester) {
         // The target may not be attached on the first frame (lazy lists, NavHost
         // transitions), so retry briefly instead of assuming immediate layout.
-        repeat(6) {
-            delay(90)
+        repeat(10) {
+            delay(100)
             if (runCatching { focusRequester.requestFocus() }.isSuccess) return@LaunchedEffect
         }
     }

@@ -46,11 +46,13 @@ import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
+import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.components.SearchResultRow
 
 @Composable
-fun SearchScreen(onToast: (String) -> Unit) {
+fun SearchScreen(onPlay: (PlaybackRequest) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     val results = remember(query) { DemoCatalog.search(query) }
 
@@ -104,7 +106,7 @@ fun SearchScreen(onToast: (String) -> Unit) {
                     items(results, key = { it.id }) { hit ->
                         SearchResultRow(
                             hit = hit,
-                            onClick = { onToast("«${hit.title}» se abrirá en una fase posterior.") },
+                            onClick = { onPlay(hit.toPlaybackRequest()) },
                         )
                     }
                 }

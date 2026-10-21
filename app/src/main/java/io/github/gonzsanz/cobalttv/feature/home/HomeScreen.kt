@@ -43,7 +43,9 @@ import io.github.gonzsanz.cobalttv.core.designsystem.SectionHeader
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
+import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.components.ChannelCard
 import io.github.gonzsanz.cobalttv.ui.components.ContinueWatchingCard
 import io.github.gonzsanz.cobalttv.ui.components.PosterCard
@@ -53,7 +55,7 @@ import io.github.gonzsanz.cobalttv.ui.navigation.Destination
 fun HomeScreen(
     onNavigate: (Destination) -> Unit,
     onOpenSources: () -> Unit,
-    onToast: (String) -> Unit,
+    onPlay: (PlaybackRequest) -> Unit,
 ) {
     val heroFocusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
@@ -95,7 +97,7 @@ fun HomeScreen(
                 items(DemoCatalog.continueWatching, key = { it.id }) { item ->
                     ContinueWatchingCard(
                         item = item,
-                        onClick = { onToast("«${item.title}» se reproducirá en la Fase 2.") },
+                        onClick = { onPlay(item.toPlaybackRequest()) },
                     )
                 }
             }
@@ -112,7 +114,7 @@ fun HomeScreen(
                 items(DemoCatalog.channels, key = { it.id }) { channel ->
                     ChannelCard(
                         channel = channel,
-                        onClick = { onToast("«${channel.name}» se reproducirá en la Fase 2.") },
+                        onClick = { onPlay(channel.toPlaybackRequest()) },
                     )
                 }
             }
@@ -131,7 +133,7 @@ fun HomeScreen(
                         title = movie.title,
                         subtitle = "${movie.year} · ${movie.genre}",
                         accent = movie.accent,
-                        onClick = { onToast("La ficha de «${movie.title}» llegará en la Fase 6.") },
+                        onClick = { onPlay(movie.toPlaybackRequest()) },
                     )
                 }
             }
@@ -150,7 +152,7 @@ fun HomeScreen(
                         title = series.title,
                         subtitle = "${series.seasons} temp. · ${series.genre}",
                         accent = series.accent,
-                        onClick = { onToast("La ficha de «${series.title}» llegará en la Fase 6.") },
+                        onClick = { onPlay(series.toPlaybackRequest()) },
                     )
                 }
             }
@@ -164,7 +166,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Cobalt TV 0.1.0 · Fase 1 · Contenido de demostración, sin emisiones reales",
+                    text = "Cobalt TV 0.2.0 · Fase 2 · Reproductor Media3 · Contenido de demostración",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted,
                 )

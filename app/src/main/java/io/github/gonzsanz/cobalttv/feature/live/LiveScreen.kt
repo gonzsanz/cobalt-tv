@@ -21,11 +21,13 @@ import androidx.compose.ui.unit.dp
 import io.github.gonzsanz.cobalttv.core.designsystem.CategoryChip
 import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
+import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.components.ChannelGrid
 
 @Composable
-fun LiveScreen(onToast: (String) -> Unit) {
+fun LiveScreen(onPlay: (PlaybackRequest) -> Unit) {
     var selectedCategory by rememberSaveable { mutableStateOf("Todos") }
     val channels = remember(selectedCategory) { DemoCatalog.channelsByCategory(selectedCategory) }
     val firstChipFocusRequester = remember { FocusRequester() }
@@ -34,7 +36,7 @@ fun LiveScreen(onToast: (String) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(
             title = "TV en directo",
-            subtitle = "Elige una categoría y un canal. El reproductor Media3 llega en la Fase 2.",
+            subtitle = "Elige una categoría y un canal. Reproducción con un stream público de prueba.",
         )
 
         LazyRow(
@@ -56,7 +58,7 @@ fun LiveScreen(onToast: (String) -> Unit) {
         ChannelGrid(
             channels = channels,
             onChannelClick = { channel ->
-                onToast("«${channel.name}» se reproducirá en la Fase 2 (Media3).")
+                onPlay(channel.toPlaybackRequest())
             },
             modifier = Modifier.weight(1f),
         )

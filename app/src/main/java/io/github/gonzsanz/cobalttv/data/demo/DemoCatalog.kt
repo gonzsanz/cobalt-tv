@@ -41,6 +41,7 @@ data class DemoContinueWatching(
     val subtitle: String,
     val progress: Float,
     val accent: Color,
+    val isLive: Boolean = false,
 )
 
 data class DemoSearchHit(
@@ -235,6 +236,7 @@ object DemoCatalog {
             subtitle = "Directo · Grandes migraciones",
             progress = 0.86f,
             accent = Color(0xFF2E9E5B),
+            isLive = true,
         ),
     )
 

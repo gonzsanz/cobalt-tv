@@ -24,6 +24,37 @@
 >   BACK oculta el teclado; el siguiente vuelve a Inicio.
 > - CI de GitHub Actions en verde: `assembleDebug` + tests unitarios; el APK
 >   release con R8 se comprueba también en local.
+>
+> **Fase 2 completada (2026-10-21)**
+>
+> - Media3/ExoPlayer 1.11.1 con `media3-exoplayer`, `media3-exoplayer-hls` y
+>   `media3-ui`. HLS y MP4 progresivo por el mismo reproductor.
+> - El reproductor es una ruta (`player`) fuera del rail: al abrirse ocupa toda
+>   la pantalla y el rail desaparece; BACK vuelve a la pantalla de origen con el
+>   foco restaurado.
+> - `PlaybackSession` (en memoria) transporta título, subtítulo, URL y si es
+>   directo. Evita meter URLs largas o credenciales en la ruta/back stack.
+> - Controles propios de TV: play/pausa, −10 s y +10 s (solo VOD), barra de
+>   progreso y tiempos. Los controles se ocultan a los 5 s si hay reproducción y
+>   reaparecen con cualquier tecla; con los controles ocultos, OK alterna
+>   play/pausa y las flechas solo muestran los controles. BACK sale del
+>   reproductor (no hay doble BACK: el comportamiento real del NavHost es salir).
+> - Estados: spinner de buffering, badge EN DIRECTO sin seek, panel de error con
+>   mensaje en español + Reintentar/Volver, y fin de reproducción que vuelve a
+>   mostrar controles y enfoca play para repetir.
+> - Ciclo de vida: pausa en `ON_STOP`, reanuda en `ON_START` si estaba sonando;
+>   audio focus y noisy handling de ExoPlayer; `keepScreenOn` en el PlayerView.
+> - Streams de prueba: HLS `https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8`
+>   y MP4 `https://media.w3.org/2010/05/sintel/trailer.mp4`. El bucket antiguo de
+>   Google (`commondatastorage.googleapis.com/.../BigBuckBunny.mp4`) devuelve 403
+>   y se descartó; sirvió para verificar el panel de error.
+> - `InitialFocusEffect` amplía los reintentos a 10×100 ms: en arranque en frío el
+>   primer foco del hero podía perderse y el rail se quedaba con el foco.
+> - Verificado en emulador API 36 (1080p): reproducción HLS de un canal demo,
+>   pausa/reanudación, autoocultado, reaparición con D-pad, VOD MP4 con progreso
+>   00:02/00:52, seek ±10 s, fin de reproducción, panel de error 403 y BACK a la
+>   pantalla anterior. `assembleDebug`, tests y `assembleRelease` con R8 en verde.
+> - Pendiente de la Fase 2: prueba en la Mi Box real (no se toca sin permiso).
 
 # CONTEXT.md --- Proyecto de app IPTV para Android TV
 

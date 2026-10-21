@@ -4,9 +4,10 @@ Reproductor IPTV para Android TV, escrito en Kotlin con Jetpack Compose for TV y
 Media3. Pensado para uso personal y un grupo pequeño de amigos: cada usuario
 configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 
-> **Estado: Fase 1 (base navegable).** La app arranca, navega con mando y muestra
-> pantallas completas con **datos de demostración**. Todavía no descarga listas
-> M3U, no conecta con Xtream Codes y no reproduce vídeo: eso llega en las
+> **Estado: Fase 2 (reproductor Media3).** La app navega con mando, reproduce HLS
+> y MP4 con ExoPlayer, muestra controles de play/pausa y ±10 s, gestiona
+> buffering, errores y ciclo de vida, y conecta todas las tarjetas demo con
+> streams públicos de prueba. M3U, Xtream Codes, EPG y persistencia llegan en las
 > siguientes fases. Verificada en el emulador Android TV (API 36) con D-pad.
 
 ![Banner](app/src/main/res/drawable/tv_banner.png)
@@ -21,6 +22,10 @@ configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 | --- | --- |
 | ![Películas](docs/screenshots/movies.png) | ![Buscar](docs/screenshots/search.png) |
 
+| Reproductor VOD | Error de reproducción |
+| --- | --- |
+| ![Reproductor VOD](docs/screenshots/player-vod.png) | ![Error de reproducción](docs/screenshots/player-error.png) |
+
 Más pantallas: [series](docs/screenshots/series.png),
 [ajustes](docs/screenshots/settings.png) y [fuentes](docs/screenshots/sources.png).
 
@@ -33,12 +38,17 @@ Más pantallas: [series](docs/screenshots/series.png),
 - TV en directo con categorías y rejilla de canales (demo).
 - Películas y series con catálogo de pósteres (demo).
 - Búsqueda funcional sobre el catálogo demo, con teclado en pantalla.
+- Reproductor Media3 a pantalla completa con HLS y MP4 progresivo.
+- Controles con foco de TV: play/pausa, −10 s, +10 s, barra de progreso y tiempos.
+- Autoocultado de controles a los 5 s, reaparición con cualquier tecla del mando.
+- Indicador de buffering, badge EN DIRECTO, keep-screen-on y pausa al salir de la app.
+- Panel de error con mensaje comprensible, Reintentar y Volver.
+- BACK sale del reproductor y devuelve a la pantalla de origen con el foco restaurado.
 - Favoritos vacío, fuentes vacío y ajustes con estado real de la app.
-- Avisos de "función en una fase posterior" al pulsar contenido que aún no se
-  puede reproducir.
 
-Todo el contenido de ejemplo está marcado con la etiqueta **DATOS DE DEMO** y no
-apunta a ningún stream real.
+Todas las tarjetas de demo abren el reproductor con dos streams públicos de
+prueba: HLS (Big Buck Bunny, Mux) y MP4 progresivo (tráiler de Sintel, W3C). No
+son canales reales y no se distribuye ningún contenido de terceros.
 
 ## Stack
 
@@ -50,6 +60,7 @@ apunta a ningún stream real.
 | Compose BOM | 2026.09.00 |
 | Compose for TV (`androidx.tv:tv-material`) | 1.1.0 |
 | Navigation Compose | 2.10.2 |
+| Media3 / ExoPlayer | 1.11.1 |
 | compileSdk / targetSdk | 37 |
 | minSdk | 24 |
 
@@ -110,9 +121,11 @@ rendimiento y el mando se validan en la Mi Box.
 app/src/main/java/io/github/gonzsanz/cobalttv/
   MainActivity.kt
   core/designsystem/     tema, tipografía, foco, componentes, iconos
-  data/demo/             catálogo de demostración (solo UI)
+  core/playback/         petición de reproducción y sesión en memoria
+  data/demo/             catálogo de demostración y streams de prueba
   feature/
     home/ live/ movies/ series/ favorites/ search/ settings/ sources/
+    player/              reproductor Media3 y controles de TV
   ui/
     CobaltTvApp.kt       shell, navegación lateral, NavHost
     components/          tarjetas de contenido
@@ -127,7 +140,7 @@ producirán modelos normalizados en `domain` y las pantallas no cambiarán.
 | Fase | Contenido | Estado |
 | --- | --- | --- |
 | 1 | Proyecto, launcher TV, navegación, inicio, datos demo | ✅ |
-| 2 | Media3: reproducción, controles, ciclo de vida, errores | ⏳ |
+| 2 | Media3: reproducción, controles, ciclo de vida, errores | ✅ |
 | 3 | Importación M3U por URL y archivo + parser tolerante | ⏳ |
 | 4 | TV en directo real, categorías, favoritos, EPG | ⏳ |
 | 5 | Xtream Codes (login, categorías, canales, VOD) | ⏳ |

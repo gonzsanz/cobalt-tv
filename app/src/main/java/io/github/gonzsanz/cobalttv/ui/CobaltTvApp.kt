@@ -51,10 +51,13 @@ import io.github.gonzsanz.cobalttv.core.designsystem.CobaltIcons
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.ToastHost
 import io.github.gonzsanz.cobalttv.core.designsystem.ToastState
+import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
+import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
 import io.github.gonzsanz.cobalttv.feature.home.HomeScreen
 import io.github.gonzsanz.cobalttv.feature.live.LiveScreen
 import io.github.gonzsanz.cobalttv.feature.movies.MoviesScreen
+import io.github.gonzsanz.cobalttv.feature.player.PlayerScreen
 import io.github.gonzsanz.cobalttv.feature.search.SearchScreen
 import io.github.gonzsanz.cobalttv.feature.series.SeriesScreen
 import io.github.gonzsanz.cobalttv.feature.settings.SettingsScreen
@@ -67,6 +70,14 @@ fun CobaltTvApp() {
     val toastState = remember { ToastState() }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val isPlayer = currentRoute == Destination.PLAYER_ROUTE
+
+    val openPlayer: (PlaybackRequest) -> Unit = { request ->
+        PlaybackSession.current = request
+        navController.navigate(Destination.PLAYER_ROUTE) {
+            launchSingleTop = true
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -74,33 +85,39 @@ fun CobaltTvApp() {
             .background(MaterialTheme.colorScheme.background),
     ) {
         Row(Modifier.fillMaxSize()) {
-            SideNav(
-                currentRoute = currentRoute,
-                onNavigate = { navController.navigateTopLevel(it) },
-            )
+            if (!isPlayer) {
+                SideNav(
+                    currentRoute = currentRoute,
+                    onNavigate = { navController.navigateTopLevel(it) },
+                )
+            }
 
             NavHost(
                 navController = navController,
                 startDestination = Destination.Home.route,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier = if (isPlayer) {
+                    Modifier.fillMaxSize()
+                } else {
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                },
             ) {
                 composable(Destination.Home.route) {
                     HomeScreen(
                         onNavigate = { navController.navigateTopLevel(it) },
                         onOpenSources = { navController.navigate(Destination.SOURCES_ROUTE) },
-                        onToast = toastState::show,
+                        onPlay = openPlayer,
                     )
                 }
                 composable(Destination.Live.route) {
-                    LiveScreen(onToast = toastState::show)
+                    LiveScreen(onPlay = openPlayer)
                 }
                 composable(Destination.Movies.route) {
-                    MoviesScreen(onToast = toastState::show)
+                    MoviesScreen(onPlay = openPlayer)
                 }
                 composable(Destination.Series.route) {
-                    SeriesScreen(onToast = toastState::show)
+                    SeriesScreen(onPlay = openPlayer)
                 }
                 composable(Destination.Favorites.route) {
                     FavoritesScreen(
@@ -108,7 +125,7 @@ fun CobaltTvApp() {
                     )
                 }
                 composable(Destination.Search.route) {
-                    SearchScreen(onToast = toastState::show)
+                    SearchScreen(onPlay = openPlayer)
                 }
                 composable(Destination.Settings.route) {
                     SettingsScreen(
@@ -119,15 +136,20 @@ fun CobaltTvApp() {
                 composable(Destination.SOURCES_ROUTE) {
                     SourcesScreen(onToast = toastState::show)
                 }
+                composable(Destination.PLAYER_ROUTE) {
+                    PlayerScreen(onBack = { navController.popBackStack() })
+                }
             }
         }
 
-        ToastHost(
-            state = toastState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 30.dp),
-        )
+        if (!isPlayer) {
+            ToastHost(
+                state = toastState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 30.dp),
+            )
+        }
     }
 }
 

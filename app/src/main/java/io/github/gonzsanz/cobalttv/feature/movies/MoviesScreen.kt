@@ -15,11 +15,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
+import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.components.PosterCard
 
 @Composable
-fun MoviesScreen(onToast: (String) -> Unit) {
+fun MoviesScreen(onPlay: (PlaybackRequest) -> Unit) {
     val firstPosterFocusRequester = remember { FocusRequester() }
     InitialFocusEffect(firstPosterFocusRequester)
 
@@ -27,7 +29,7 @@ fun MoviesScreen(onToast: (String) -> Unit) {
         ScreenHeader(
             title = "Películas",
             subtitle = "${DemoCatalog.movies.size} títulos de demostración. " +
-                "La ficha y la reproducción llegarán en la Fase 6.",
+                "Pulsa una película para reproducir un vídeo de prueba.",
         )
 
         LazyVerticalGrid(
@@ -42,7 +44,7 @@ fun MoviesScreen(onToast: (String) -> Unit) {
                     title = movie.title,
                     subtitle = "${movie.year} · ${movie.genre}",
                     accent = movie.accent,
-                    onClick = { onToast("La ficha de «${movie.title}» llegará en la Fase 6.") },
+                    onClick = { onPlay(movie.toPlaybackRequest()) },
                     modifier = if (index == 0) Modifier.focusRequester(firstPosterFocusRequester) else Modifier,
                 )
             }

@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.gonzsanz.cobalttv"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     buildTypes {
@@ -49,6 +49,11 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     implementation(libs.androidx.tv.material)
+
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.ui)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

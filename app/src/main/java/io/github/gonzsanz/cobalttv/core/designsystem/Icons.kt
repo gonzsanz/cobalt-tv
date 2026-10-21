@@ -156,4 +156,25 @@ object CobaltIcons {
             }
         }.build()
     }
+
+    val Pause: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Pause",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2.6f,
+                strokeLineCap = StrokeCap.Round,
+            ) {
+                moveTo(9f, 6f)
+                lineTo(9f, 18f)
+                moveTo(15f, 6f)
+                lineTo(15f, 18f)
+            }
+        }.build()
+    }
 }
