@@ -84,6 +84,9 @@ fun SeriesScreen(onOpenSeries: (SeriesItem) -> Unit) {
     val visible = remember(series, selected) {
         if (selected == ALL) series else series.filter { it.group == selected }
     }
+    // Returning from a detail screen must land on the title that was opened, not on the first one.
+    var lastId by rememberSaveable { mutableStateOf<String?>(null) }
+    val focusIndex = remember(visible, lastId) { visible.indexOfFirst { it.id == lastId }.coerceAtLeast(0) }
     val firstPoster = remember { FocusRequester() }
     InitialFocusEffect(firstPoster)
 
@@ -114,8 +117,11 @@ fun SeriesScreen(onOpenSeries: (SeriesItem) -> Unit) {
                         subtitle = listOfNotNull(item.year, item.rating?.takeIf { it != "0" })
                             .joinToString(" · "),
                         imageUrl = item.coverUrl,
-                        onClick = { onOpenSeries(item) },
-                        modifier = if (index == 0) Modifier.focusRequester(firstPoster) else Modifier,
+                        onClick = {
+                        lastId = item.id
+                        onOpenSeries(item)
+                    },
+                        modifier = if (index == focusIndex) Modifier.focusRequester(firstPoster) else Modifier,
                     )
                 }
             }

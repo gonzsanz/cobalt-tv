@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -19,7 +20,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import coil3.compose.SubcomposeAsyncImage
+import androidx.compose.ui.platform.LocalContext
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.size.Size
 import io.github.gonzsanz.cobalttv.core.designsystem.FocusableSurface
 import io.github.gonzsanz.cobalttv.ui.model.accentFor
 
@@ -48,13 +52,17 @@ fun VodPosterCard(
     ) {
         Box(Modifier.fillMaxSize()) {
             if (!imageUrl.isNullOrBlank()) {
-                SubcomposeAsyncImage(
-                    model = imageUrl,
+                // A fixed request size lets Coil answer from its memory cache on the
+                // first frame, so covers do not flash after coming back to the grid.
+                val context = LocalContext.current
+                val request = remember(imageUrl) {
+                    ImageRequest.Builder(context).data(imageUrl).size(Size(300, 450)).build()
+                }
+                AsyncImage(
+                    model = request,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
-                    loading = {},
-                    error = {},
                 )
             }
             Box(

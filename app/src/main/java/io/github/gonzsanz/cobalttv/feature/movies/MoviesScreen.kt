@@ -79,6 +79,9 @@ fun MoviesScreen(onOpenMovie: (VodItem) -> Unit) {
     val visible = remember(movies, selected) {
         if (selected == ALL) movies else movies.filter { it.group == selected }
     }
+    // Returning from a detail screen must land on the title that was opened, not on the first one.
+    var lastId by rememberSaveable { mutableStateOf<String?>(null) }
+    val focusIndex = remember(visible, lastId) { visible.indexOfFirst { it.id == lastId }.coerceAtLeast(0) }
     val firstPoster = remember { FocusRequester() }
     InitialFocusEffect(firstPoster)
 
@@ -109,8 +112,11 @@ fun MoviesScreen(onOpenMovie: (VodItem) -> Unit) {
                         subtitle = listOfNotNull(movie.year, movie.rating?.takeIf { it != "0" })
                             .joinToString(" · "),
                         imageUrl = movie.logoUrl,
-                        onClick = { onOpenMovie(movie) },
-                        modifier = if (index == 0) Modifier.focusRequester(firstPoster) else Modifier,
+                        onClick = {
+                        lastId = movie.id
+                        onOpenMovie(movie)
+                    },
+                        modifier = if (index == focusIndex) Modifier.focusRequester(firstPoster) else Modifier,
                     )
                 }
             }
