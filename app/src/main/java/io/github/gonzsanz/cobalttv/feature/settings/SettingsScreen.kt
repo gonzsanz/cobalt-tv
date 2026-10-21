@@ -39,6 +39,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.model.channelCountLabel
 
 @Composable
 fun SettingsScreen(
@@ -69,7 +70,7 @@ fun SettingsScreen(
                     subtitle = when {
                         catalog.isLoading && source == null -> "Cargando la lista guardada…"
                         source != null ->
-                            "${source.name} · ${catalog.channels.size} canales"
+                            "${source.name} · ${channelCountLabel(catalog.channels.size)}"
                         else -> "Sin lista configurada · M3U por URL o archivo"
                     },
                     icon = CobaltIcons.Sources,

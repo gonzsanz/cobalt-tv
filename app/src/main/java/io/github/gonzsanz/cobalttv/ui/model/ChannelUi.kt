@@ -18,6 +18,7 @@ data class ChannelUi(
     val nowPlaying: String,
     val accent: Color,
     val streamUrl: String,
+    val isDemo: Boolean = false,
 )
 
 private val accentPalette = listOf(
@@ -35,6 +36,10 @@ private val accentPalette = listOf(
 fun accentFor(seed: String): Color =
     accentPalette[(seed.hashCode() and Int.MAX_VALUE) % accentPalette.size]
 
+/** "1 canal" / "8 canales", used in headers and source summaries. */
+fun channelCountLabel(count: Int): String =
+    if (count == 1) "1 canal" else "$count canales"
+
 fun Channel.toUi(): ChannelUi = ChannelUi(
     id = id,
     name = name,
@@ -51,6 +56,7 @@ fun DemoChannel.toUi(): ChannelUi = ChannelUi(
     nowPlaying = nowPlaying,
     accent = accent,
     streamUrl = DemoStreams.Hls,
+    isDemo = true,
 )
 
 fun ChannelUi.toPlaybackRequest(): PlaybackRequest = PlaybackRequest(

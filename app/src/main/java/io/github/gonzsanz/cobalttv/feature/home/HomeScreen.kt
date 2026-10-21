@@ -49,6 +49,7 @@ import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
 import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.LocalFavorites
 import io.github.gonzsanz.cobalttv.ui.components.ChannelCard
 import io.github.gonzsanz.cobalttv.ui.components.ContinueWatchingCard
 import io.github.gonzsanz.cobalttv.ui.components.PosterCard
@@ -61,11 +62,14 @@ fun HomeScreen(
     onNavigate: (Destination) -> Unit,
     onOpenSources: () -> Unit,
     onPlay: (PlaybackRequest) -> Unit,
+    onToast: (String) -> Unit = {},
 ) {
     val heroFocusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val catalog by LocalCatalog.current.state.collectAsState()
+    val favoritesRepo = LocalFavorites.current
+    val favorites by favoritesRepo.favorites.collectAsState()
     val hasRealChannels = catalog.channels.isNotEmpty()
     val homeChannels = remember(hasRealChannels, catalog.channels) {
         if (hasRealChannels) {
@@ -136,6 +140,13 @@ fun HomeScreen(
                     ChannelCard(
                         channel = channel,
                         onClick = { onPlay(channel.channelToPlaybackRequest()) },
+                        isFavorite = channel.id in favorites,
+                        onLongClick = {
+                            val added = favoritesRepo.toggle(channel.id)
+                            onToast(
+                                if (added) "Añadido a favoritos" else "Quitado de favoritos",
+                            )
+                        },
                     )
                 }
             }

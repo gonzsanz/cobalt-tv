@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -27,19 +28,27 @@ import androidx.tv.material3.Text
 import io.github.gonzsanz.cobalttv.core.designsystem.CategoryChip
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltSpinner
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
+import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.LocalFavorites
 import io.github.gonzsanz.cobalttv.ui.components.ChannelGrid
 import io.github.gonzsanz.cobalttv.ui.model.ChannelUi
+import io.github.gonzsanz.cobalttv.ui.model.channelCountLabel
 import io.github.gonzsanz.cobalttv.ui.model.toPlaybackRequest
 import io.github.gonzsanz.cobalttv.ui.model.toUi
 import kotlinx.coroutines.delay
 
 @Composable
-fun LiveScreen(onPlay: (PlaybackRequest) -> Unit) {
+fun LiveScreen(
+    onPlay: (PlaybackRequest) -> Unit,
+    onToast: (String) -> Unit = {},
+) {
     val catalog by LocalCatalog.current.state.collectAsState()
+    val favoritesRepo = LocalFavorites.current
+    val favorites by favoritesRepo.favorites.collectAsState()
     val hasRealChannels = catalog.channels.isNotEmpty()
 
     val categories = remember(hasRealChannels, catalog.channels) {
@@ -94,8 +103,12 @@ fun LiveScreen(onPlay: (PlaybackRequest) -> Unit) {
             title = "TV en directo",
             subtitle = when {
                 hasRealChannels && catalog.source != null ->
-                    "${catalog.channels.size} canales de «${catalog.source?.name}»."
-                hasRealChannels -> "${catalog.channels.size} canales importados."
+                    "${channelCountLabel(catalog.channels.size)} de «${catalog.source?.name}»."
+                hasRealChannels -> if (catalog.channels.size == 1) {
+                    "1 canal importado."
+                } else {
+                    "${catalog.channels.size} canales importados."
+                }
                 else -> "Elige una categoría y un canal. " +
                     "Reproducción con un stream público de prueba."
             },
@@ -145,7 +158,19 @@ fun LiveScreen(onPlay: (PlaybackRequest) -> Unit) {
             onChannelClick = { channel ->
                 onPlay(channel.toPlaybackRequest())
             },
+            favoriteIds = favorites,
+            onChannelLongClick = { channel ->
+                val added = favoritesRepo.toggle(channel.id)
+                onToast(if (added) "Añadido a favoritos" else "Quitado de favoritos")
+            },
             modifier = Modifier.weight(1f),
+        )
+
+        Text(
+            text = "OK: ver · Mantén OK para añadir o quitar de favoritos",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextMuted,
+            modifier = Modifier.padding(start = 48.dp, bottom = 14.dp),
         )
     }
 }

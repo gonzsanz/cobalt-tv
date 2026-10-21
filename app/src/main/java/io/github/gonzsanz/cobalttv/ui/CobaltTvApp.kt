@@ -56,6 +56,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.ToastState
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
 import io.github.gonzsanz.cobalttv.data.catalog.CatalogRepository
+import io.github.gonzsanz.cobalttv.data.favorites.FavoritesRepository
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
 import io.github.gonzsanz.cobalttv.feature.home.HomeScreen
 import io.github.gonzsanz.cobalttv.feature.live.LiveScreen
@@ -86,8 +87,14 @@ fun CobaltTvApp() {
     val catalog = remember(context.applicationContext) {
         CatalogRepository(context.applicationContext)
     }
+    val favorites = remember(context.applicationContext) {
+        FavoritesRepository(context.applicationContext)
+    }
 
-    CompositionLocalProvider(LocalCatalog provides catalog) {
+    CompositionLocalProvider(
+        LocalCatalog provides catalog,
+        LocalFavorites provides favorites,
+    ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -117,10 +124,14 @@ fun CobaltTvApp() {
                         onNavigate = { navController.navigateTopLevel(it) },
                         onOpenSources = { navController.navigate(Destination.SOURCES_ROUTE) },
                         onPlay = openPlayer,
+                        onToast = toastState::show,
                     )
                 }
                 composable(Destination.Live.route) {
-                    LiveScreen(onPlay = openPlayer)
+                    LiveScreen(
+                        onPlay = openPlayer,
+                        onToast = toastState::show,
+                    )
                 }
                 composable(Destination.Movies.route) {
                     MoviesScreen(onPlay = openPlayer)
@@ -130,7 +141,9 @@ fun CobaltTvApp() {
                 }
                 composable(Destination.Favorites.route) {
                     FavoritesScreen(
+                        onPlay = openPlayer,
                         onExploreLive = { navController.navigateTopLevel(Destination.Live) },
+                        onToast = toastState::show,
                     )
                 }
                 composable(Destination.Search.route) {

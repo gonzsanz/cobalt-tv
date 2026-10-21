@@ -11,9 +11,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -65,6 +66,7 @@ import kotlinx.coroutines.isActive
  * never from hover. Content receives whether the surface currently owns focus so
  * labels can change colour when needed.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FocusableSurface(
     onClick: () -> Unit,
@@ -77,6 +79,7 @@ fun FocusableSurface(
     focusedBorderColor: Color = Color.White,
     focusedScale: Float = 1.04f,
     enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable BoxScope.(focused: Boolean) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -113,7 +116,11 @@ fun FocusableSurface(
                 shape = shape,
             )
             .onFocusChanged { focused = it.isFocused }
-            .clickable(enabled = enabled, onClick = onClick),
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
         content = { content(isFocused) },
     )
 }

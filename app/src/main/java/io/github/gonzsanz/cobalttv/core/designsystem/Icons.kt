@@ -177,4 +177,38 @@ object CobaltIcons {
             }
         }.build()
     }
+
+    val Heart: ImageVector by lazy {
+        heartBuilder("Heart", filled = false)
+    }
+
+    val HeartFilled: ImageVector by lazy {
+        heartBuilder("HeartFilled", filled = true)
+    }
+
+    private fun heartBuilder(name: String, filled: Boolean): ImageVector =
+        ImageVector.Builder(
+            name = name,
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            path(
+                fill = if (filled) SolidColor(Color.Black) else null,
+                stroke = if (filled) null else SolidColor(Color.Black),
+                strokeLineWidth = 1.7f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                moveTo(12f, 20.4f)
+                curveTo(10.9f, 19.4f, 3.8f, 14.6f, 3.8f, 9.4f)
+                curveTo(3.8f, 6.7f, 5.9f, 4.6f, 8.4f, 4.6f)
+                curveTo(10.1f, 4.6f, 11.3f, 5.6f, 12f, 6.8f)
+                curveTo(12.7f, 5.6f, 13.9f, 4.6f, 15.6f, 4.6f)
+                curveTo(18.1f, 4.6f, 20.2f, 6.7f, 20.2f, 9.4f)
+                curveTo(20.2f, 14.6f, 13.1f, 19.4f, 12f, 20.4f)
+                close()
+            }
+        }.build()
 }

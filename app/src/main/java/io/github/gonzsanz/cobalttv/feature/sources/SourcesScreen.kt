@@ -70,6 +70,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.WarningAmber
 import io.github.gonzsanz.cobalttv.data.catalog.PlaylistSource
 import io.github.gonzsanz.cobalttv.data.catalog.SourceKind
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.model.channelCountLabel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -271,7 +272,7 @@ private fun ActiveSourceCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${source.kind.label()} · ${source.channelCount} canales · " +
+                    text = "${source.kind.label()} · ${channelCountLabel(source.channelCount)} · " +
                         "Importada el ${formatDate(source.importedAt)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary,

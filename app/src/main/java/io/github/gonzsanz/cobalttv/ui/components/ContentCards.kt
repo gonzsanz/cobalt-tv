@@ -16,20 +16,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import io.github.gonzsanz.cobalttv.core.designsystem.Cobalt
+import io.github.gonzsanz.cobalttv.core.designsystem.CobaltIcons
 import io.github.gonzsanz.cobalttv.core.designsystem.FocusableSurface
 import io.github.gonzsanz.cobalttv.core.designsystem.InitialsAvatar
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
@@ -115,9 +120,12 @@ fun ChannelCard(
     channel: ChannelUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isFavorite: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
 ) {
     FocusableSurface(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier
             .width(248.dp)
             .height(140.dp),
@@ -132,7 +140,11 @@ fun ChannelCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 InitialsAvatar(name = channel.name, accent = channel.accent, size = 44.dp)
                 Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .padding(end = 22.dp),
+                ) {
                     Text(
                         text = channel.name,
                         style = MaterialTheme.typography.titleSmall,
@@ -157,6 +169,15 @@ fun ChannelCard(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        Icon(
+            imageVector = if (isFavorite) CobaltIcons.HeartFilled else CobaltIcons.Heart,
+            contentDescription = if (isFavorite) "Favorito" else "Añadir a favoritos",
+            tint = if (isFavorite) Cobalt else TextMuted.copy(alpha = 0.72f),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 12.dp, end = 12.dp)
+                .size(18.dp),
+        )
     }
 }
 
@@ -292,6 +313,9 @@ fun ChannelGrid(
     channels: List<ChannelUi>,
     onChannelClick: (ChannelUi) -> Unit,
     modifier: Modifier = Modifier,
+    favoriteIds: Set<String> = emptySet(),
+    onChannelLongClick: ((ChannelUi) -> Unit)? = null,
+    firstItemFocusRequester: FocusRequester? = null,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 240.dp),
@@ -305,13 +329,22 @@ fun ChannelGrid(
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        items(
+        itemsIndexed(
             items = channels,
-            key = { it.id },
-        ) { channel ->
+            key = { _, channel -> channel.id },
+        ) { index, channel ->
             ChannelCard(
                 channel = channel,
                 onClick = { onChannelClick(channel) },
+                isFavorite = channel.id in favoriteIds,
+                onLongClick = onChannelLongClick?.let { callback ->
+                    { callback(channel) }
+                },
+                modifier = if (index == 0 && firstItemFocusRequester != null) {
+                    Modifier.focusRequester(firstItemFocusRequester)
+                } else {
+                    Modifier
+                },
             )
         }
     }
