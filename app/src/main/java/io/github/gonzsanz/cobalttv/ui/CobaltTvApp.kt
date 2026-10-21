@@ -177,13 +177,25 @@ fun CobaltTvApp() {
                 composable(Destination.Guide.route) {
                     GuideScreen(onPlay = openPlayer)
                 }
-                composable(Destination.Movies.route) {
+                composable(
+                    Destination.Movies.route,
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
+                ) {
                     MoviesScreen(onOpenMovie = { item ->
                         MovieSession.current = item
                         navController.navigate(Destination.MOVIE_DETAIL_ROUTE)
                     })
                 }
-                composable(Destination.Series.route) {
+                composable(
+                    Destination.Series.route,
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
+                ) {
                     SeriesScreen(onOpenSeries = { item ->
                         SeriesSession.current = item
                         navController.navigate(Destination.SERIES_DETAIL_ROUTE)
@@ -212,10 +224,22 @@ fun CobaltTvApp() {
                         },
                     )
                 }
-                composable(Destination.MOVIE_DETAIL_ROUTE) {
+                composable(
+                    Destination.MOVIE_DETAIL_ROUTE,
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
+                ) {
                     MovieDetailScreen(onPlay = openPlayer)
                 }
-                composable(Destination.SERIES_DETAIL_ROUTE) {
+                composable(
+                    Destination.SERIES_DETAIL_ROUTE,
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
+                ) {
                     SeriesDetailScreen(onPlay = openPlayer)
                 }
                 composable(Destination.PLAYER_ROUTE) {
