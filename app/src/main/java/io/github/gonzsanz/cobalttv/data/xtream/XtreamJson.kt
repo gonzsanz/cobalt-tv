@@ -1,6 +1,8 @@
-package io.github.gonzsanz.cobalttv.data.xtream
+﻿package io.github.gonzsanz.cobalttv.data.xtream
 
 import io.github.gonzsanz.cobalttv.data.catalog.Channel
+import io.github.gonzsanz.cobalttv.data.catalog.SeriesDetail
+import io.github.gonzsanz.cobalttv.data.catalog.SeriesEpisode
 import io.github.gonzsanz.cobalttv.data.catalog.SeriesItem
 import io.github.gonzsanz.cobalttv.data.catalog.VodItem
 import java.security.MessageDigest
@@ -221,6 +223,62 @@ object XtreamJson {
             )
         }
         return series
+    }
+
+    fun parseSeriesInfo(
+        root: JSONObject,
+        credentials: XtreamCredentials,
+        base: HttpUrl,
+    ): SeriesDetail {
+        val plot = root.optJSONObject("info")?.let { text(it, "plot") }
+        val episodes = ArrayList<SeriesEpisode>()
+
+        fun addEpisode(item: JSONObject, fallbackSeason: Int) {
+            val id = text(item, "id") ?: return
+            val extension = text(item, "container_extension")
+                ?.takeIf { extensionRegex.matches(it) }
+                ?: "mp4"
+            val season = intOrNull(item, "season") ?: fallbackSeason
+            val number = intOrNull(item, "episode_num") ?: (episodes.size + 1)
+            val info = item.optJSONObject("info")
+            episodes += SeriesEpisode(
+                id = id,
+                season = season,
+                number = number,
+                title = text(item, "title") ?: "Episodio $number",
+                streamUrl = streamUrl(base, "series", credentials, id, extension),
+                plot = info?.let { text(it, "plot") },
+                duration = info?.let { text(it, "duration") },
+            )
+        }
+
+        fun addSeason(value: Any?, season: Int) {
+            val array = value as? JSONArray ?: return
+            for (index in 0 until array.length()) {
+                array.optJSONObject(index)?.let { addEpisode(it, season) }
+            }
+        }
+
+        when (val raw = root.opt("episodes")) {
+            is JSONObject -> raw.keys().forEach { key ->
+                addSeason(raw.opt(key), key.toIntOrNull() ?: 1)
+            }
+            is JSONArray -> for (index in 0 until raw.length()) {
+                val entry = raw.opt(index)
+                if (entry is JSONArray) {
+                    addSeason(entry, index + 1)
+                } else if (entry is JSONObject) {
+                    addEpisode(entry, 1)
+                }
+            }
+        }
+        val seen = HashSet<String>()
+        return SeriesDetail(
+            plot = plot,
+            episodes = episodes
+                .filter { seen.add(it.id) }
+                .sortedWith(compareBy({ it.season }, { it.number })),
+        )
     }
 
     private fun accountFrom(user: JSONObject): XtreamAccount {

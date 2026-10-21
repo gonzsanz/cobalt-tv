@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.data.catalog
+﻿package io.github.gonzsanz.cobalttv.data.catalog
 
 /** A playable live channel, independent of the source that produced it. */
 data class Channel(
@@ -52,6 +52,22 @@ data class SeriesItem(
     val rating: String? = null,
     val year: String? = null,
     val plot: String? = null,
+)
+
+/** One playable episode of a series, resolved on demand from the provider. */
+data class SeriesEpisode(
+    val id: String,
+    val season: Int,
+    val number: Int,
+    val title: String,
+    val streamUrl: String,
+    val plot: String? = null,
+    val duration: String? = null,
+)
+
+data class SeriesDetail(
+    val plot: String?,
+    val episodes: List<SeriesEpisode>,
 )
 
 data class CatalogState(

@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.data.xtream
+﻿package io.github.gonzsanz.cobalttv.data.xtream
 
 import io.github.gonzsanz.cobalttv.data.catalog.Channel
 import io.github.gonzsanz.cobalttv.data.catalog.SeriesItem
@@ -339,4 +339,36 @@ class XtreamJsonTest {
             XtreamCatalogCache.decode("""{"version":1,"channels":[],"movies":[],"series":[]}""")
         }
     }
-}
+
+    @Test
+    fun `parses series info episodes ordered by season and number`() {
+        val root = JSONObject(
+            """
+            {"info":{"plot":"Trama"},
+             "episodes":{
+               "2":[{"id":"30","episode_num":1,"title":"Dos uno","container_extension":"mkv",
+                     "info":{"plot":"P","duration":"45:00"}}],
+               "1":[{"id":"11","episode_num":2,"title":"Uno dos"},
+                    {"id":"10","episode_num":"1","title":"Uno uno","container_extension":"mp4"},
+                    {"id":"10","episode_num":1,"title":"Duplicado"},
+                    {"title":"Sin id"}]
+             }}
+            """.trimIndent(),
+        )
+        val detail = XtreamJson.parseSeriesInfo(root, credentials, base)
+        assertEquals("Trama", detail.plot)
+        assertEquals(listOf("10", "11", "30"), detail.episodes.map { it.id })
+        assertEquals(listOf(1, 1, 2), detail.episodes.map { it.season })
+        assertEquals("Uno uno", detail.episodes[0].title)
+        assertTrue(detail.episodes[2].streamUrl.endsWith("/series/user%20name/p@ss/30.mkv"))
+        assertEquals("45:00", detail.episodes[2].duration)
+    }
+
+    @Test
+    fun `parses series info with episodes as nested arrays`() {
+        val root = JSONObject(
+            """{"episodes":[[{"id":"1","episode_num":1,"title":"A"}],[{"id":"2","episode_num":1,"title":"B"}]]}""",
+        )
+        val detail = XtreamJson.parseSeriesInfo(root, credentials, base)
+        assertEquals(listOf(1, 2), detail.episodes.map { it.season })
+    }}

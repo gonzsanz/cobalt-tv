@@ -21,5 +21,6 @@ enum class Destination(
     companion object {
         const val SOURCES_ROUTE = "sources"
         const val PLAYER_ROUTE = "player"
+        const val SERIES_DETAIL_ROUTE = "series_detail"
     }
 }

@@ -1,5 +1,6 @@
-package io.github.gonzsanz.cobalttv.data.xtream
+﻿package io.github.gonzsanz.cobalttv.data.xtream
 
+import io.github.gonzsanz.cobalttv.data.catalog.SeriesDetail
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -85,6 +86,16 @@ class XtreamClient(
             series = series,
             account = account,
         )
+    }
+
+    fun loadSeriesDetail(credentials: XtreamCredentials, seriesId: String): SeriesDetail {
+        val base = XtreamJson.normalizeServer(credentials.server)
+        val normalized = credentials.copy(server = base.toString())
+        val url = XtreamJson.apiUrl(base, normalized, "get_series_info")
+            .newBuilder()
+            .addQueryParameter("series_id", seriesId)
+            .build()
+        return XtreamJson.parseSeriesInfo(fetchObject(url), normalized, base)
     }
 
     private fun fetchObject(url: HttpUrl): JSONObject =

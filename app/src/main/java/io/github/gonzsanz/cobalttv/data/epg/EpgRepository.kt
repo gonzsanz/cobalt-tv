@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.data.epg
+﻿package io.github.gonzsanz.cobalttv.data.epg
 
 import android.util.Log
 import io.github.gonzsanz.cobalttv.data.catalog.CatalogRepository
@@ -34,8 +34,8 @@ class EpgRepository(
 ) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(45, TimeUnit.SECONDS)
-        .callTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .callTimeout(300, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
@@ -78,7 +78,13 @@ class EpgRepository(
             throw error
         } catch (error: Exception) {
             // Never log the guide URL: it may contain a private token.
-            Log.w(TAG, "Guía EPG no disponible (${error.javaClass.simpleName})")
+            val reason = when {
+                error is java.net.SocketTimeoutException -> "tiempo agotado"
+                error.message?.contains("supera el límite") == true -> "demasiado grande"
+                error.message?.startsWith("El servidor respondió") == true -> error.message
+                else -> null
+            }
+            Log.w(TAG, "Guía EPG no disponible (${error.javaClass.simpleName}${reason?.let { ": $it" } ?: ""})")
             _state.value = EpgState(
                 status = EpgStatus.Error,
                 message = "No se pudo cargar la guía EPG.",
@@ -103,7 +109,7 @@ class EpgRepository(
             }
             val body = response.body
             if (body.contentLength() > MAX_EPG_BYTES) {
-                throw IOException("La guía EPG supera el límite de 32 MB")
+                throw IOException("La guía EPG supera el límite")
             }
             body.byteStream().use { input ->
                 LimitedInputStream(input, MAX_EPG_BYTES).use { limited ->
@@ -146,6 +152,6 @@ class EpgRepository(
 
     private companion object {
         const val TAG = "CobaltEpg"
-        const val MAX_EPG_BYTES = 32L * 1024 * 1024
+        const val MAX_EPG_BYTES = 256L * 1024 * 1024
     }
 }

@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.data.catalog
+﻿package io.github.gonzsanz.cobalttv.data.catalog
 
 import android.content.Context
 import android.net.Uri
@@ -28,6 +28,7 @@ import io.github.gonzsanz.cobalttv.data.xtream.XtreamCredentials
 import io.github.gonzsanz.cobalttv.data.xtream.XtreamException
 import io.github.gonzsanz.cobalttv.data.xtream.XtreamJson
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -180,6 +181,19 @@ class CatalogRepository(context: Context) {
         scope.launch {
             clearStoredSource()
             _state.value = CatalogState(isLoading = false)
+        }
+    }
+
+    /** Seasons and episodes come from the provider on demand, never from the cache. */
+    suspend fun loadSeriesDetail(series: SeriesItem): SeriesDetail {
+        val source = _state.value.source
+        val stored = xtreamCredentials.load()
+        if (source?.kind != SourceKind.Xtream || stored == null) {
+            throw XtreamException("Esta fuente no ofrece temporadas ni episodios.")
+        }
+        val credentials = XtreamCredentials(source.location, stored.username, stored.password)
+        return withContext(Dispatchers.IO) {
+            xtreamClient.loadSeriesDetail(credentials, series.sourceId)
         }
     }
 

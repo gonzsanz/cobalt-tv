@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.data.epg
+﻿package io.github.gonzsanz.cobalttv.data.epg
 
 import java.io.InputStream
 import java.text.SimpleDateFormat
@@ -11,8 +11,8 @@ import org.xml.sax.helpers.DefaultHandler
 
 private const val EPG_WINDOW_FUTURE_MS = 24L * 60 * 60 * 1000
 private const val EPG_DEFAULT_DURATION_MS = 60L * 60 * 1000
-private const val EPG_MAX_TITLE_CHARS = 240
-private const val EPG_MAX_PROGRAMMES = 50_000
+private const val EPG_MAX_TITLE_CHARS = 120
+private const val EPG_MAX_PROGRAMMES = 400_000
 private val whitespaceRegex = Regex("\\s+")
 
 /**
