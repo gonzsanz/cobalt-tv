@@ -118,9 +118,15 @@ Tests unitarios (parser M3U y normalización):
 3. La lista se guarda en el dispositivo y aparece como fuente activa.
    **Ver TV en directo** abre los canales.
 
-Para probar sin una lista real, usa
-[`docs/sample-playlist.m3u`](docs/sample-playlist.m3u): son 8 canales de ejemplo
-que apuntan al stream público de pruebas de Mux.
+Para probar sin una lista real, usa la lista de ejemplo: son 8 canales que
+apuntan al stream público de pruebas de Mux. Pega esta URL en **Fuentes**:
+
+```text
+https://raw.githubusercontent.com/gonzsanz/cobalt-tv/main/docs/sample-playlist.m3u
+```
+
+El archivo también está en
+[`docs/sample-playlist.m3u`](docs/sample-playlist.m3u).
 
 La app acepta listas con o sin `#EXTM3U`, atributos `tvg-id`, `tvg-name`,
 `tvg-logo` y `group-title`, directivas `#EXTGRP` y URLs sueltas. Solo hay una

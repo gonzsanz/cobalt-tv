@@ -75,11 +75,13 @@
 >   Eliminar con confirmación (Cancelar por defecto), formulario para sustituir
 >   la lista, spinner compartido y estilo Danger. DOWN desde el campo URL lleva
 >   a Importar (o a Elegir archivo si el campo está vacío).
-> - Verificación en emulador API 36: importación de 8 canales por URL, filtros
->   por categoría, reproducción HLS de un canal importado, persistencia tras
->   force-stop, actualización correcta y fallo 404 sin perder la lista activa;
->   borrar la fuente vuelve a los datos demo. La búsqueda devuelve los canales
->   reales. `assembleDebug` y `assembleRelease` con R8 en verde.
+> - Verificación en emulador API 36: importación de 8 canales desde la URL raw
+>   de GitHub de la lista de ejemplo, filtros por categoría, reproducción HLS de
+>   un canal importado, persistencia tras force-stop y tras reiniciar el
+>   emulador completo, actualización correcta y fallo 404 sin perder la lista
+>   activa; borrar la fuente vuelve a los datos demo. La búsqueda devuelve los
+>   canales reales. `assembleDebug`, 10 tests del parser y `assembleRelease` con
+>   R8 en verde; CI de GitHub Actions en verde.
 > - El selector SAF del emulador resuelve a un stub sin interfaz; el formulario
 >   muestra una nota para usar la URL. La importación por archivo queda pendiente
 >   de probar en la Mi Box (Fase 8).
@@ -458,6 +460,11 @@ garantías.
     lista IPTV esté disponible.
 -   No asumir que el emulador reproduce con la misma fluidez que el
     hardware físico.
+-   En este PC el AVD `CobaltTV` (Android TV API 36, 1920×1080) usa el
+    puerto 5556 y se inicia con `-gpu host`. Con
+    `-gpu swiftshader_indirect` aparecieron artefactos de framebuffer
+    (texto duplicado) tras sesiones largas de vídeo; reiniciar el
+    emulador completo y usar el renderizador del host los elimina.
 
 ## 10. Distribución a amigos
 
