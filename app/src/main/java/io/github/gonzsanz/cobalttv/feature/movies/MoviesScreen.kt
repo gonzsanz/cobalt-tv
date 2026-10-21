@@ -4,14 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
-import io.github.gonzsanz.cobalttv.core.designsystem.CategoryChip
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltIcons
 import io.github.gonzsanz.cobalttv.core.designsystem.EmptyState
 import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
@@ -32,6 +32,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.catalog.VodItem
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import io.github.gonzsanz.cobalttv.ui.components.CategorySidebar
 import io.github.gonzsanz.cobalttv.ui.components.VodPosterCard
 
 private const val ALL = "Todas"
@@ -68,6 +69,12 @@ fun MoviesScreen(onPlay: (PlaybackRequest) -> Unit) {
         listOf(ALL) + movies.map { it.group }.filter { it.isNotBlank() }.distinct()
             .sortedBy { it.lowercase() }
     }
+    val counts = remember(movies) {
+        buildMap {
+            put(ALL, movies.size)
+            movies.groupingBy { it.group }.eachCount().forEach { (k, v) -> put(k, v) }
+        }
+    }
     var selected by rememberSaveable { mutableStateOf(ALL) }
     LaunchedEffect(categories) { if (selected !in categories) selected = ALL }
     val visible = remember(movies, selected) {
@@ -82,38 +89,33 @@ fun MoviesScreen(onPlay: (PlaybackRequest) -> Unit) {
             subtitle = "${movies.size} títulos de «${catalog.source?.name}»",
             showDemoBadge = false,
         )
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 48.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            itemsIndexed(categories, key = { _, name -> name }) { _, name ->
-                CategoryChip(
-                    label = if (name.length > 28) name.take(27) + "…" else name,
-                    selected = name == selected,
-                    onClick = { selected = name },
-                )
+        Row(Modifier.fillMaxSize().padding(start = 24.dp, bottom = 12.dp)) {
+            CategorySidebar(
+                categories = categories,
+                counts = counts,
+                selected = selected,
+                onSelect = { selected = it },
+                modifier = Modifier.width(190.dp).fillMaxHeight(),
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 140.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 4.dp, end = 24.dp, bottom = 32.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                itemsIndexed(visible, key = { _, movie -> movie.id }) { index, movie ->
+                    VodPosterCard(
+                        title = movie.name,
+                        subtitle = listOfNotNull(movie.year, movie.rating?.takeIf { it != "0" })
+                            .joinToString(" · "),
+                        imageUrl = movie.logoUrl,
+                        onClick = { onPlay(movie.toPlaybackRequest()) },
+                        modifier = if (index == 0) Modifier.focusRequester(firstPoster) else Modifier,
+                    )
+                }
             }
-        }
-        Spacer(Modifier.height(14.dp))
-
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 48.dp, top = 6.dp, end = 48.dp, bottom = 40.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            itemsIndexed(visible, key = { _, movie -> movie.id }) { index, movie ->
-                VodPosterCard(
-                    title = movie.name,
-                    subtitle = listOfNotNull(movie.year, movie.rating?.takeIf { it != "0" })
-                        .joinToString(" · "),
-                    imageUrl = movie.logoUrl,
-                    onClick = { onPlay(movie.toPlaybackRequest()) },
-                    modifier = if (index == 0) Modifier.focusRequester(firstPoster) else Modifier,
-                )
             }
-        }
     }
 }
 

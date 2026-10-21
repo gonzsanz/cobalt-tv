@@ -581,6 +581,7 @@ private fun PreviewBox(holder: PlayerHolder, modifier: Modifier = Modifier) {
                 PlayerView(ctx).apply {
                     useController = false
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
                     isFocusable = false
                     isFocusableInTouchMode = false
                     player = holder.player

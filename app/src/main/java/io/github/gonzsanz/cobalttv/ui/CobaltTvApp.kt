@@ -57,6 +57,8 @@ import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
 import io.github.gonzsanz.cobalttv.data.catalog.CatalogRepository
 import io.github.gonzsanz.cobalttv.data.epg.EpgRepository
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -152,6 +154,10 @@ fun CobaltTvApp() {
             NavHost(
                 navController = navController,
                 startDestination = Destination.Live.route,
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
                 modifier = if (isPlayer) {
                     Modifier.fillMaxSize()
                 } else {

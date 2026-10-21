@@ -329,7 +329,9 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
 
                     Key.DirectionCenter, Key.Enter -> {
                         if (isLive) {
-                            if (currentRequest.liveChannels.isNotEmpty()) listVisible = true
+                            // OK shows the channel info without touching playback.
+                            controlsVisible = true
+                            interactionTick++
                             true
                         } else if (!controlsVisible) {
                             controlsVisible = true
@@ -610,7 +612,7 @@ private fun LiveBanner(request: PlaybackRequest, modifier: Modifier = Modifier) 
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "↑↓ canal · OK lista · 0-9 número",
+                text = "↑↓ canal · ← lista · 0-9 número",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.55f),
             )
