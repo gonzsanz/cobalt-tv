@@ -9,7 +9,6 @@ enum class Destination(
     val label: String,
     val shortLabel: String,
 ) {
-    Home("home", "Inicio", "Inicio"),
     Live("live", "TV en directo", "TV"),
     Guide("guide", "Guía de TV", "Guía"),
     Movies("movies", "Películas", "Películas"),

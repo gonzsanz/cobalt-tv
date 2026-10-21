@@ -66,7 +66,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.gonzsanz.cobalttv.core.playback.PlayerHolder
 import io.github.gonzsanz.cobalttv.data.favorites.FavoritesRepository
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
-import io.github.gonzsanz.cobalttv.feature.home.HomeScreen
 import io.github.gonzsanz.cobalttv.feature.guide.GuideScreen
 import io.github.gonzsanz.cobalttv.feature.live.LiveScreen
 import io.github.gonzsanz.cobalttv.feature.movies.MoviesScreen
@@ -159,14 +158,6 @@ fun CobaltTvApp() {
                         .fillMaxHeight()
                 },
             ) {
-                composable(Destination.Home.route) {
-                    HomeScreen(
-                        onNavigate = { navController.navigateTopLevel(it) },
-                        onOpenSources = { navController.navigate(Destination.SOURCES_ROUTE) },
-                        onPlay = openPlayer,
-                        onToast = toastState::show,
-                    )
-                }
                 composable(Destination.Live.route) {
                     LiveScreen(
                         onPlay = openPlayer,
@@ -363,7 +354,6 @@ private fun SideNavItem(
 }
 
 private fun iconFor(destination: Destination): ImageVector = when (destination) {
-    Destination.Home -> Icons.Filled.Home
     Destination.Live -> CobaltIcons.LiveTv
     Destination.Guide -> Icons.Filled.DateRange
     Destination.Movies -> CobaltIcons.Movies
