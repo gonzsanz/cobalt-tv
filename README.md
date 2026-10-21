@@ -4,11 +4,13 @@ Reproductor IPTV para Android TV, escrito en Kotlin con Jetpack Compose for TV y
 Media3. Pensado para uso personal y un grupo pequeño de amigos: cada usuario
 configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 
-> **Estado: Fase 2 (reproductor Media3).** La app navega con mando, reproduce HLS
-> y MP4 con ExoPlayer, muestra controles de play/pausa y ±10 s, gestiona
-> buffering, errores y ciclo de vida, y conecta todas las tarjetas demo con
-> streams públicos de prueba. M3U, Xtream Codes, EPG y persistencia llegan en las
-> siguientes fases. Verificada en el emulador Android TV (API 36) con D-pad.
+> **Estado: Fase 3 (importación M3U).** La app importa listas M3U/M3U8 por URL
+> (y por archivo con el selector del sistema), tolera metadatos incompletos y
+> guarda la lista en el dispositivo. Los canales reales aparecen en TV en
+> directo, Inicio y Búsqueda, con filtros por categoría y reproducción HLS/MP4.
+> Xtream Codes, EPG y favoritos persistentes llegan en las siguientes fases.
+> Versión actual: **0.3.0**. Verificada en el emulador Android TV (API 36) con
+> D-pad.
 
 ![Banner](app/src/main/res/drawable/tv_banner.png)
 
@@ -35,20 +37,31 @@ Más pantallas: [series](docs/screenshots/series.png),
 - Tema oscuro cinematográfico (grafito + azul cobalto) y tipografía para sofá.
 - Navegación lateral compacta con foco visible y orden predecible.
 - Pantalla de inicio con hero, filas de "Continuar viendo", TV, películas y series.
-- TV en directo con categorías y rejilla de canales (demo).
+- TV en directo con canales reales importados y filtros por categoría; si no hay
+  fuente, muestra el catálogo demo.
 - Películas y series con catálogo de pósteres (demo).
-- Búsqueda funcional sobre el catálogo demo, con teclado en pantalla.
+- Búsqueda sobre los canales importados y el catálogo demo, con teclado en pantalla.
+- Importación M3U por URL y por archivo local (selector SAF del sistema), con
+  lista de ejemplo incluida.
+- Parser tolerante: BOM/CRLF, listas sin `#EXTM3U`, directivas desconocidas,
+  comas entre comillas, `#EXTGRP`, URLs sueltas, deduplicación e IDs estables.
+- Una fuente activa a la vez: importar otra sustituye la anterior. La lista se
+  cachea en el dispositivo y se restaura al volver a abrir la app.
+- Errores de descarga/parseo en español, límite de importación de 16 MB y sin
+  registrar URLs ni credenciales.
 - Reproductor Media3 a pantalla completa con HLS y MP4 progresivo.
 - Controles con foco de TV: play/pausa, −10 s, +10 s, barra de progreso y tiempos.
 - Autoocultado de controles a los 5 s, reaparición con cualquier tecla del mando.
 - Indicador de buffering, badge EN DIRECTO, keep-screen-on y pausa al salir de la app.
 - Panel de error con mensaje comprensible, Reintentar y Volver.
 - BACK sale del reproductor y devuelve a la pantalla de origen con el foco restaurado.
-- Favoritos vacío, fuentes vacío y ajustes con estado real de la app.
+- Favoritos vacío, fuentes con importar/actualizar/eliminar y ajustes con el
+  estado real de la lista.
 
-Todas las tarjetas de demo abren el reproductor con dos streams públicos de
-prueba: HLS (Big Buck Bunny, Mux) y MP4 progresivo (tráiler de Sintel, W3C). No
-son canales reales y no se distribuye ningún contenido de terceros.
+Las tarjetas de demo, y los canales de la lista de ejemplo, abren el reproductor
+con dos streams públicos de prueba: HLS (Big Buck Bunny, Mux) y MP4 progresivo
+(tráiler de Sintel, W3C). No son canales reales y no se distribuye ningún
+contenido de terceros.
 
 ## Stack
 
@@ -61,6 +74,7 @@ son canales reales y no se distribuye ningún contenido de terceros.
 | Compose for TV (`androidx.tv:tv-material`) | 1.1.0 |
 | Navigation Compose | 2.10.2 |
 | Media3 / ExoPlayer | 1.11.1 |
+| OkHttp | 5.5.0 |
 | compileSdk / targetSdk | 37 |
 | minSdk | 24 |
 
@@ -88,7 +102,34 @@ En Windows:
 
 El APK queda en `app/build/outputs/apk/debug/app-debug.apk`.
 
+Tests unitarios (parser M3U y normalización):
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest
+```
+
 `local.properties` con la ruta del SDK no se versiona.
+
+## Importar una lista
+
+1. Abre **Fuentes** desde Inicio (*Añadir fuente*) o Ajustes.
+2. Pega la URL de una lista M3U/M3U8 y pulsa **Importar lista**, o elige un
+   archivo guardado con **Elegir archivo…**.
+3. La lista se guarda en el dispositivo y aparece como fuente activa.
+   **Ver TV en directo** abre los canales.
+
+Para probar sin una lista real, usa
+[`docs/sample-playlist.m3u`](docs/sample-playlist.m3u): son 8 canales de ejemplo
+que apuntan al stream público de pruebas de Mux.
+
+La app acepta listas con o sin `#EXTM3U`, atributos `tvg-id`, `tvg-name`,
+`tvg-logo` y `group-title`, directivas `#EXTGRP` y URLs sueltas. Solo hay una
+fuente activa; importar otra sustituye la anterior. La lista se cachea en el
+almacenamiento privado de la app y no se envían datos a servidores propios.
+
+En algunos televisores el selector de archivos del sistema no está disponible;
+en ese caso usa la URL. La importación por archivo se probará en la Mi Box en la
+Fase 8.
 
 ## Instalar en la Mi Box
 
@@ -122,18 +163,22 @@ app/src/main/java/io/github/gonzsanz/cobalttv/
   MainActivity.kt
   core/designsystem/     tema, tipografía, foco, componentes, iconos
   core/playback/         petición de reproducción y sesión en memoria
+  data/catalog/          modelos, parser M3U, repositorio y persistencia
   data/demo/             catálogo de demostración y streams de prueba
   feature/
     home/ live/ movies/ series/ favorites/ search/ settings/ sources/
     player/              reproductor Media3 y controles de TV
   ui/
     CobaltTvApp.kt       shell, navegación lateral, NavHost
+    LocalCatalog.kt      CompositionLocal con el catálogo activo
+    model/               mapeo de canales importados a la UI
     components/          tarjetas de contenido
     navigation/          destinos
 ```
 
-La UI no conoce M3U ni Xtream Codes: cuando se implementen los importadores,
-producirán modelos normalizados en `domain` y las pantallas no cambiarán.
+La UI no conoce el formato M3U ni Xtream Codes: los importadores producen
+`Channel` normalizados y el repositorio expone un `StateFlow` que las pantallas
+observan. Añadir Xtream Codes en la Fase 5 no debería cambiar las pantallas.
 
 ## Fases
 
@@ -141,8 +186,8 @@ producirán modelos normalizados en `domain` y las pantallas no cambiarán.
 | --- | --- | --- |
 | 1 | Proyecto, launcher TV, navegación, inicio, datos demo | ✅ |
 | 2 | Media3: reproducción, controles, ciclo de vida, errores | ✅ |
-| 3 | Importación M3U por URL y archivo + parser tolerante | ⏳ |
-| 4 | TV en directo real, categorías, favoritos, EPG | ⏳ |
+| 3 | Importación M3U por URL y archivo + parser tolerante | ✅ |
+| 4 | Favoritos, EPG/XMLTV y zapping | ⏳ |
 | 5 | Xtream Codes (login, categorías, canales, VOD) | ⏳ |
 | 6 | Películas y series: fichas, temporadas, episodios | ⏳ |
 | 7 | Room, DataStore, caché de imágenes, pulido | ⏳ |
@@ -152,10 +197,13 @@ No se avanza de fase hasta que la anterior compila y se ha probado.
 
 ## Legal y privacidad
 
-- El repositorio no incluye listas, credenciales ni streams.
+- El repositorio no incluye listas, credenciales ni streams de terceros. Solo
+  incluye una lista de ejemplo con un stream público de pruebas.
 - Usa solo fuentes que tengas derecho a reproducir.
 - Las credenciales de Xtream Codes se guardarán en el dispositivo, nunca en el
   repositorio ni en logs.
+- Las URLs de las fuentes se tratan como datos privados: se cachean en el
+  almacenamiento de la app y no se escriben en los logs.
 - La app no envía datos a servidores propios ni incluye analítica.
 
 El contexto completo del proyecto y las decisiones tomadas están en

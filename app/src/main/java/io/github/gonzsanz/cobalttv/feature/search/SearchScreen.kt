@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,18 +49,57 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
+import io.github.gonzsanz.cobalttv.data.demo.DemoSearchHit
+import io.github.gonzsanz.cobalttv.data.demo.SearchKind
 import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
+import io.github.gonzsanz.cobalttv.ui.LocalCatalog
 import io.github.gonzsanz.cobalttv.ui.components.SearchResultRow
+import io.github.gonzsanz.cobalttv.ui.model.accentFor
 
 @Composable
 fun SearchScreen(onPlay: (PlaybackRequest) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
-    val results = remember(query) { DemoCatalog.search(query) }
+    val catalog by LocalCatalog.current.state.collectAsState()
+    val hasRealChannels = catalog.channels.isNotEmpty()
+
+    val results = remember(query, hasRealChannels, catalog.channels) {
+        val term = query.trim()
+        if (term.isEmpty()) {
+            emptyList()
+        } else {
+            val realHits = catalog.channels.asSequence()
+                .filter {
+                    it.name.contains(term, ignoreCase = true) ||
+                        it.group.contains(term, ignoreCase = true)
+                }
+                .take(80)
+                .map { channel ->
+                    DemoSearchHit(
+                        id = channel.id,
+                        title = channel.name,
+                        subtitle = "${channel.group} · En directo",
+                        kind = SearchKind.Channel,
+                        accent = accentFor("${channel.group}|${channel.name}"),
+                        streamUrl = channel.streamUrl,
+                    )
+                }
+                .toList()
+
+            val demoHits = DemoCatalog.search(term)
+                .filter { !hasRealChannels || it.kind != SearchKind.Channel }
+
+            realHits + demoHits
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(
             title = "Buscar",
-            subtitle = "Búsqueda sobre el catálogo de demostración.",
+            subtitle = if (hasRealChannels) {
+                "Canales de tu lista y catálogo de demostración."
+            } else {
+                "Búsqueda sobre el catálogo de demostración."
+            },
         )
 
         SearchField(

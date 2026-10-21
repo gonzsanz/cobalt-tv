@@ -1,10 +1,6 @@
 package io.github.gonzsanz.cobalttv.feature.player
 
 import android.util.Log
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,9 +38,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -72,6 +65,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.CobaltButton
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltButtonStyle
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltIcons
 import io.github.gonzsanz.cobalttv.core.designsystem.CobaltSoft
+import io.github.gonzsanz.cobalttv.core.designsystem.CobaltSpinner
 import io.github.gonzsanz.cobalttv.core.designsystem.ErrorRed
 import io.github.gonzsanz.cobalttv.core.designsystem.Graphite
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
@@ -156,7 +150,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
             }
 
             override fun onPlayerError(playerError: PlaybackException) {
-                Log.e(TAG, "No se pudo reproducir ${request.url}", playerError)
+                Log.e(TAG, "No se pudo reproducir el contenido", playerError)
                 error = playerError
                 controlsVisible = true
             }
@@ -612,38 +606,12 @@ private fun BufferingOverlay() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        BufferingSpinner()
+        CobaltSpinner()
         Spacer(Modifier.height(16.dp))
         Text(
             text = "Conectando con la señal…",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White.copy(alpha = 0.85f),
-        )
-    }
-}
-
-@Composable
-private fun BufferingSpinner() {
-    val rotation = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            rotation.animateTo(
-                targetValue = rotation.value + 360f,
-                animationSpec = tween(durationMillis = 900, easing = LinearEasing),
-            )
-        }
-    }
-    Canvas(
-        modifier = Modifier
-            .size(48.dp)
-            .graphicsLayer { rotationZ = rotation.value },
-    ) {
-        drawArc(
-            color = CobaltSoft,
-            startAngle = -90f,
-            sweepAngle = 265f,
-            useCenter = false,
-            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round),
         )
     }
 }

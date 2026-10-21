@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,12 +38,15 @@ import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
+import io.github.gonzsanz.cobalttv.ui.LocalCatalog
 
 @Composable
 fun SettingsScreen(
     onOpenSources: () -> Unit,
     onToast: (String) -> Unit,
 ) {
+    val catalog by LocalCatalog.current.state.collectAsState()
+    val source = catalog.source
     val firstRowFocusRequester = remember { FocusRequester() }
     InitialFocusEffect(firstRowFocusRequester)
 
@@ -49,6 +54,7 @@ fun SettingsScreen(
         ScreenHeader(
             title = "Ajustes",
             subtitle = "Fuentes, reproducción y datos de la aplicación.",
+            showDemoBadge = false,
         )
 
         LazyColumn(
@@ -60,7 +66,12 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     title = "Fuentes IPTV",
-                    subtitle = "Listas M3U y cuentas Xtream Codes",
+                    subtitle = when {
+                        catalog.isLoading && source == null -> "Cargando la lista guardada…"
+                        source != null ->
+                            "${source.name} · ${catalog.channels.size} canales"
+                        else -> "Sin lista configurada · M3U por URL o archivo"
+                    },
                     icon = CobaltIcons.Sources,
                     onClick = onOpenSources,
                     modifier = Modifier.focusRequester(firstRowFocusRequester),
@@ -71,9 +82,9 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     title = "Reproductor",
-                    subtitle = "Media3 / ExoPlayer · disponible en la Fase 2",
+                    subtitle = "Media3 / ExoPlayer · HLS y MP4",
                     icon = CobaltIcons.Play,
-                    onClick = { onToast("El reproductor se integra en la Fase 2.") },
+                    onClick = { onToast("Reproducción con Media3 (HLS y MP4).") },
                 )
             }
 
@@ -81,7 +92,7 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     title = "Acerca de Cobalt TV",
-                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 1",
+                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 3",
                     icon = Icons.Filled.Info,
                     onClick = { onToast("Cobalt TV ${BuildConfig.VERSION_NAME}, uso personal.") },
                 )

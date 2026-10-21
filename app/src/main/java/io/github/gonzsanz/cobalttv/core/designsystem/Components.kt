@@ -2,12 +2,15 @@ package io.github.gonzsanz.cobalttv.core.designsystem
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,6 +46,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +58,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 /**
  * A focus-aware surface for TV: the only interaction feedback comes from focus,
@@ -112,7 +118,7 @@ fun FocusableSurface(
     )
 }
 
-enum class CobaltButtonStyle { Primary, Secondary, Ghost }
+enum class CobaltButtonStyle { Primary, Secondary, Ghost, Danger }
 
 @Composable
 fun CobaltButton(
@@ -127,16 +133,19 @@ fun CobaltButton(
         CobaltButtonStyle.Primary -> MaterialTheme.colorScheme.primary
         CobaltButtonStyle.Secondary -> MaterialTheme.colorScheme.surfaceVariant
         CobaltButtonStyle.Ghost -> Color.Transparent
+        CobaltButtonStyle.Danger -> ErrorRed.copy(alpha = 0.12f)
     }
     val focusedContainerColor = when (style) {
         CobaltButtonStyle.Primary -> CobaltSoft
         CobaltButtonStyle.Secondary -> Color(0xFF22314A)
         CobaltButtonStyle.Ghost -> Color.White.copy(alpha = 0.08f)
+        CobaltButtonStyle.Danger -> ErrorRed
     }
     val borderColor = when (style) {
         CobaltButtonStyle.Primary -> Color.Transparent
         CobaltButtonStyle.Secondary -> MaterialTheme.colorScheme.border
         CobaltButtonStyle.Ghost -> Color.Transparent
+        CobaltButtonStyle.Danger -> ErrorRed.copy(alpha = 0.5f)
     }
 
     FocusableSurface(
@@ -155,6 +164,8 @@ fun CobaltButton(
             style == CobaltButtonStyle.Primary && focused -> Graphite
             style == CobaltButtonStyle.Primary -> Color.White
             style == CobaltButtonStyle.Secondary && focused -> Color.White
+            style == CobaltButtonStyle.Danger && focused -> Color.White
+            style == CobaltButtonStyle.Danger -> ErrorRed
             else -> TextSecondary
         }
         Row(
@@ -432,6 +443,37 @@ fun InitialFocusEffect(focusRequester: FocusRequester) {
             delay(100)
             if (runCatching { focusRequester.requestFocus() }.isSuccess) return@LaunchedEffect
         }
+    }
+}
+
+@Composable
+fun CobaltSpinner(
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    color: Color = CobaltSoft,
+    strokeWidth: Dp = 4.dp,
+) {
+    val rotation = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            rotation.animateTo(
+                targetValue = rotation.value + 360f,
+                animationSpec = tween(durationMillis = 900, easing = LinearEasing),
+            )
+        }
+    }
+    Canvas(
+        modifier = modifier
+            .size(size)
+            .graphicsLayer { rotationZ = rotation.value },
+    ) {
+        drawArc(
+            color = color,
+            startAngle = -90f,
+            sweepAngle = 265f,
+            useCenter = false,
+            style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round),
+        )
     }
 }
 

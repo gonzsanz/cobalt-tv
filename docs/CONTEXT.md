@@ -55,6 +55,35 @@
 >   00:02/00:52, seek ±10 s, fin de reproducción, panel de error 403 y BACK a la
 >   pantalla anterior. `assembleDebug`, tests y `assembleRelease` con R8 en verde.
 > - Pendiente de la Fase 2: prueba en la Mi Box real (no se toca sin permiso).
+>
+> **Fase 3 completada (2026-10-21)**
+>
+> - Importación M3U por URL con OkHttp 5.5.0 y por archivo con el selector SAF
+>   (`OpenDocument`). Límite de 16 MB; UTF-8 con fallback Latin-1; errores HTTP y
+>   de parseo en español.
+> - Parser Android-free y tolerante: BOM/CRLF, listas sin `#EXTM3U`, directivas
+>   desconocidas, comas entre comillas, `#EXTGRP`, `tvg-name` como fallback,
+>   URLs sueltas y deduplicación por nombre+URL. IDs SHA-256 estables.
+> - Modelos `Channel`, `PlaylistSource` y `CatalogState`; `CatalogRepository`
+>   expone un `StateFlow` y se provee a la UI con `LocalCatalog`.
+> - Una sola fuente activa: importar sustituye la anterior. La lista se cachea en
+>   `playlist_cache.m3u` (filesDir) y los metadatos en `SharedPreferences`
+>   `cobalt_catalog`; se restaura al arrancar.
+> - TV en directo muestra los canales reales con categorías; Inicio y Búsqueda
+>   los incluyen. Sin fuente se mantiene el catálogo demo con su badge.
+> - Fuentes: tarjeta de estado (nombre, tipo, canales, fecha), Actualizar,
+>   Eliminar con confirmación (Cancelar por defecto), formulario para sustituir
+>   la lista, spinner compartido y estilo Danger. DOWN desde el campo URL lleva
+>   a Importar (o a Elegir archivo si el campo está vacío).
+> - Verificación en emulador API 36: importación de 8 canales por URL, filtros
+>   por categoría, reproducción HLS de un canal importado, persistencia tras
+>   force-stop, actualización correcta y fallo 404 sin perder la lista activa;
+>   borrar la fuente vuelve a los datos demo. La búsqueda devuelve los canales
+>   reales. `assembleDebug` y `assembleRelease` con R8 en verde.
+> - El selector SAF del emulador resuelve a un stub sin interfaz; el formulario
+>   muestra una nota para usar la URL. La importación por archivo queda pendiente
+>   de probar en la Mi Box (Fase 8).
+> - No se registran URLs ni credenciales en los logs.
 
 # CONTEXT.md --- Proyecto de app IPTV para Android TV
 

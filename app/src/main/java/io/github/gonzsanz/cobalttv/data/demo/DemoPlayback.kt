@@ -46,6 +46,10 @@ fun DemoContinueWatching.toPlaybackRequest() = PlaybackRequest(
 fun DemoSearchHit.toPlaybackRequest() = PlaybackRequest(
     title = title,
     subtitle = subtitle,
-    url = if (kind == SearchKind.Channel) DemoStreams.Hls else DemoStreams.Progressive,
+    url = streamUrl ?: if (kind == SearchKind.Channel) {
+        DemoStreams.Hls
+    } else {
+        DemoStreams.Progressive
+    },
     isLive = kind == SearchKind.Channel,
 )

@@ -50,6 +50,7 @@ data class DemoSearchHit(
     val subtitle: String,
     val kind: SearchKind,
     val accent: Color,
+    val streamUrl: String? = null,
 )
 
 enum class SearchKind(val label: String) {

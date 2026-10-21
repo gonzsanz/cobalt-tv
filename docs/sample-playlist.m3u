@@ -1,0 +1,28 @@
+#EXTM3U
+# Lista de ejemplo para probar la importación M3U de Cobalt TV.
+# Todos los canales apuntan al stream público de pruebas de Mux.
+# No es una lista real de televisión: úsala solo para validar la app.
+
+#EXTINF:-1 tvg-id="demo.cine" tvg-name="Cobalt Cine" group-title="Cine",Cobalt Cine
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.cine.clasico" tvg-name="Cine Clásico" group-title="Cine",Cine Clásico
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.noticias" tvg-name="Aurora Noticias" group-title="Noticias",Aurora Noticias
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.deportes" tvg-name="Deportes 24" group-title="Deportes",Deportes 24
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.docs" tvg-name="Planeta Salvaje" group-title="Documentales",Planeta Salvaje
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.musica" tvg-name="Cobalt Music" group-title="Música",Cobalt Music
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.infantil" tvg-name="Club Junior" group-title="Infantil",Club Junior
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 tvg-id="demo.series" tvg-name="Cobalt Series HD" group-title="Series",Cobalt Series, HD
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8

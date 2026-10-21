@@ -35,9 +35,9 @@ import io.github.gonzsanz.cobalttv.core.designsystem.InitialsAvatar
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
-import io.github.gonzsanz.cobalttv.data.demo.DemoChannel
 import io.github.gonzsanz.cobalttv.data.demo.DemoContinueWatching
 import io.github.gonzsanz.cobalttv.data.demo.DemoSearchHit
+import io.github.gonzsanz.cobalttv.ui.model.ChannelUi
 
 @Composable
 fun PosterCard(
@@ -112,7 +112,7 @@ fun PosterCard(
 
 @Composable
 fun ChannelCard(
-    channel: DemoChannel,
+    channel: ChannelUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -289,8 +289,8 @@ fun SearchResultRow(
 
 @Composable
 fun ChannelGrid(
-    channels: List<DemoChannel>,
-    onChannelClick: (DemoChannel) -> Unit,
+    channels: List<ChannelUi>,
+    onChannelClick: (ChannelUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -53,6 +55,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.ToastHost
 import io.github.gonzsanz.cobalttv.core.designsystem.ToastState
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackSession
+import io.github.gonzsanz.cobalttv.data.catalog.CatalogRepository
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
 import io.github.gonzsanz.cobalttv.feature.home.HomeScreen
 import io.github.gonzsanz.cobalttv.feature.live.LiveScreen
@@ -79,6 +82,12 @@ fun CobaltTvApp() {
         }
     }
 
+    val context = LocalContext.current
+    val catalog = remember(context.applicationContext) {
+        CatalogRepository(context.applicationContext)
+    }
+
+    CompositionLocalProvider(LocalCatalog provides catalog) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -134,7 +143,11 @@ fun CobaltTvApp() {
                     )
                 }
                 composable(Destination.SOURCES_ROUTE) {
-                    SourcesScreen(onToast = toastState::show)
+                    SourcesScreen(
+                        onOpenLive = {
+                            navController.navigateTopLevel(Destination.Live)
+                        },
+                    )
                 }
                 composable(Destination.PLAYER_ROUTE) {
                     PlayerScreen(onBack = { navController.popBackStack() })
@@ -150,6 +163,7 @@ fun CobaltTvApp() {
                     .padding(bottom = 30.dp),
             )
         }
+    }
     }
 }
 

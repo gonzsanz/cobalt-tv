@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -46,9 +48,12 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.demo.DemoCatalog
 import io.github.gonzsanz.cobalttv.data.demo.toPlaybackRequest
+import io.github.gonzsanz.cobalttv.ui.LocalCatalog
 import io.github.gonzsanz.cobalttv.ui.components.ChannelCard
 import io.github.gonzsanz.cobalttv.ui.components.ContinueWatchingCard
 import io.github.gonzsanz.cobalttv.ui.components.PosterCard
+import io.github.gonzsanz.cobalttv.ui.model.toPlaybackRequest as channelToPlaybackRequest
+import io.github.gonzsanz.cobalttv.ui.model.toUi
 import io.github.gonzsanz.cobalttv.ui.navigation.Destination
 
 @Composable
@@ -60,6 +65,15 @@ fun HomeScreen(
     val heroFocusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val catalog by LocalCatalog.current.state.collectAsState()
+    val hasRealChannels = catalog.channels.isNotEmpty()
+    val homeChannels = remember(hasRealChannels, catalog.channels) {
+        if (hasRealChannels) {
+            catalog.channels.take(10).map { it.toUi() }
+        } else {
+            DemoCatalog.channels.map { it.toUi() }
+        }
+    }
     val bringHeroIntoView: () -> Unit = {
         scope.launch { listState.animateScrollToItem(0) }
     }
@@ -104,17 +118,24 @@ fun HomeScreen(
         }
 
         item {
-            SectionHeader(title = "TV en directo", trailing = "${DemoCatalog.channels.size} canales demo")
+            SectionHeader(
+                title = "TV en directo",
+                trailing = if (hasRealChannels) {
+                    "${catalog.channels.size} en tu lista"
+                } else {
+                    "${DemoCatalog.channels.size} canales demo"
+                },
+            )
         }
         item {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 48.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                items(DemoCatalog.channels, key = { it.id }) { channel ->
+                items(homeChannels, key = { it.id }) { channel ->
                     ChannelCard(
                         channel = channel,
-                        onClick = { onPlay(channel.toPlaybackRequest()) },
+                        onClick = { onPlay(channel.channelToPlaybackRequest()) },
                     )
                 }
             }
@@ -166,7 +187,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Cobalt TV 0.2.0 · Fase 2 · Reproductor Media3 · Contenido de demostración",
+                    text = "Cobalt TV 0.3.0 · Fase 3 · Listas M3U · Contenido de demostración",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted,
                 )
