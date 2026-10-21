@@ -1,6 +1,7 @@
 package io.github.gonzsanz.cobalttv.feature.player
 
 import android.util.Log
+import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -92,7 +93,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val exoPlayer = remember(request.url) {
+    val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             setAudioAttributes(
                 AudioAttributes.Builder()
@@ -105,6 +106,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
         }
     }
 
+    var currentRequest by remember(request) { mutableStateOf(request) }
     var isPlaying by remember { mutableStateOf(false) }
     var playbackState by remember { mutableIntStateOf(Player.STATE_IDLE) }
     var positionMs by remember { mutableLongStateOf(0L) }
@@ -125,7 +127,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
     }
 
     val seekBy: (Long) -> Unit = { delta ->
-        if (!request.isLive) {
+        if (!currentRequest.isLive) {
             val duration = exoPlayer.duration
             val target = (exoPlayer.currentPosition + delta).coerceAtLeast(0L)
             val bounded = if (duration > 0 && duration != C.TIME_UNSET) {
@@ -135,6 +137,33 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
             }
             exoPlayer.seekTo(bounded)
             interactionTick++
+        }
+    }
+
+    val canZap = currentRequest.isLive && currentRequest.liveChannels.size > 1
+    val zapBy: (Int) -> Boolean = { direction ->
+        if (!canZap) {
+            false
+        } else {
+            val channels = currentRequest.liveChannels
+            val currentIndex = channels.indexOfFirst { it.id == currentRequest.liveChannelId }
+            val nextIndex = if (currentIndex == -1) {
+                0
+            } else {
+                (currentIndex + direction + channels.size) % channels.size
+            }
+            val next = channels[nextIndex]
+            val nextRequest = currentRequest.copy(
+                title = next.title,
+                subtitle = next.subtitle,
+                url = next.url,
+                liveChannelId = next.id,
+            )
+            currentRequest = nextRequest
+            PlaybackSession.current = nextRequest
+            controlsVisible = true
+            interactionTick++
+            true
         }
     }
 
@@ -150,7 +179,10 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
             }
 
             override fun onPlayerError(playerError: PlaybackException) {
-                Log.e(TAG, "No se pudo reproducir el contenido", playerError)
+                Log.e(
+                    TAG,
+                    "No se pudo reproducir el contenido (${playerError.errorCodeName})",
+                )
                 error = playerError
                 controlsVisible = true
             }
@@ -181,11 +213,11 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
         }
     }
 
-    LaunchedEffect(request.url, retryTick) {
+    LaunchedEffect(currentRequest.url, currentRequest.liveChannelId, retryTick) {
         error = null
         controlsVisible = true
         exoPlayer.stop()
-        exoPlayer.setMediaItem(MediaItem.fromUri(request.url))
+        exoPlayer.setMediaItem(MediaItem.fromUri(currentRequest.url))
         exoPlayer.prepare()
         exoPlayer.playWhenReady = true
     }
@@ -249,7 +281,41 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
             .focusable()
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                val nativeKeyCode = event.nativeKeyEvent.keyCode
+                val isRepeat = event.nativeKeyEvent.repeatCount > 0
+                if (nativeKeyCode == AndroidKeyEvent.KEYCODE_CHANNEL_UP) {
+                    return@onPreviewKeyEvent if (isRepeat && canZap) true else zapBy(1)
+                }
+                if (nativeKeyCode == AndroidKeyEvent.KEYCODE_CHANNEL_DOWN) {
+                    return@onPreviewKeyEvent if (isRepeat && canZap) true else zapBy(-1)
+                }
+
                 when (event.key) {
+                    Key.DirectionUp -> {
+                        if (isRepeat) {
+                            canZap
+                        } else if (zapBy(-1)) {
+                            true
+                        } else {
+                            if (!controlsVisible) controlsVisible = true
+                            interactionTick++
+                            false
+                        }
+                    }
+
+                    Key.DirectionDown -> {
+                        if (isRepeat) {
+                            canZap
+                        } else if (zapBy(1)) {
+                            true
+                        } else {
+                            if (!controlsVisible) controlsVisible = true
+                            interactionTick++
+                            false
+                        }
+                    }
+
                     Key.DirectionCenter, Key.Enter -> {
                         if (!controlsVisible) {
                             controlsVisible = true
@@ -293,11 +359,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
                         true
                     }
 
-                    Key.DirectionUp,
-                    Key.DirectionDown,
-                    Key.DirectionLeft,
-                    Key.DirectionRight,
-                    -> {
+                    Key.DirectionLeft, Key.DirectionRight -> {
                         if (!controlsVisible) controlsVisible = true
                         interactionTick++
                         false
@@ -342,11 +404,11 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
 
                 if (controlsVisible) {
                     PlayerTopBar(
-                        request = request,
+                        request = currentRequest,
                         modifier = Modifier.align(Alignment.TopCenter),
                     )
                     PlayerControls(
-                        request = request,
+                        request = currentRequest,
                         isPlaying = isPlaying,
                         isEnded = playbackState == Player.STATE_ENDED,
                         positionMs = positionMs,
@@ -364,6 +426,7 @@ private fun PlayerContent(request: PlaybackRequest, onBack: () -> Unit) {
 
 @Composable
 private fun PlayerTopBar(request: PlaybackRequest, modifier: Modifier = Modifier) {
+    val channelIndex = request.liveChannels.indexOfFirst { it.id == request.liveChannelId }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -391,6 +454,14 @@ private fun PlayerTopBar(request: PlaybackRequest, modifier: Modifier = Modifier
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+        if (request.isLive && channelIndex >= 0 && request.liveChannels.size > 1) {
+            Text(
+                text = "${channelIndex + 1} / ${request.liveChannels.size}",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.7f),
+            )
+            Spacer(Modifier.width(18.dp))
         }
         if (request.isLive) {
             LiveBadge()
@@ -441,6 +512,7 @@ private fun PlayerControls(
     playPauseFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
+    val canZap = request.liveChannels.size > 1
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -529,10 +601,11 @@ private fun PlayerControls(
             } else {
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = if (isEnded) {
-                        "Fin de la reproducción · Pulsa reproducir para verla de nuevo"
-                    } else {
-                        "La señal en directo no se puede pausar ni adelantar"
+                    text = when {
+                        isEnded ->
+                            "Fin de la reproducción · Pulsa reproducir para verla de nuevo"
+                        canZap -> "Arriba/Abajo: cambiar de canal"
+                        else -> "La señal en directo no se puede pausar ni adelantar"
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.55f),

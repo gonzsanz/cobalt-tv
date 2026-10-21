@@ -86,6 +86,32 @@
 >   muestra una nota para usar la URL. La importación por archivo queda pendiente
 >   de probar en la Mi Box (Fase 8).
 > - No se registran URLs ni credenciales en los logs.
+>
+> **Fase 4 en curso (2026-10-21)**
+>
+> - Favoritos de canales persistentes en `SharedPreferences` `cobalt_favorites`
+>   (clave `channel_ids`), guardados por el ID estable del canal. Mantener OK en
+>   Inicio, TV en directo o Favoritos alterna el favorito; los corazones y los
+>   avisos confirman el cambio. Los IDs huérfanos se conservan para que al
+>   reimportar la misma lista vuelvan los favoritos.
+> - Pantalla Favoritos real: mezcla canales reales y demo, etiqueta DATOS DE DEMO
+>   solo si hay algún favorito demo, estados de carga, vacío y "Favoritos no
+>   disponibles" cuando la fuente activa ya no contiene los canales guardados.
+> - Zapping en el reproductor en directo con Arriba/Abajo o CH+/CH−. El salto se
+>   hace dentro de la lista desde la que se abrió el canal (Todos, una categoría,
+>   Inicio o Favoritos), con vuelta circular; el reproductor no se recrea. El
+>   contador "n / total" y una pista en los controles muestran el contexto. En VOD
+>   las flechas no cambian de contenido.
+> - Verificación en emulador API 36: favoritos con pulsación larga (toast,
+>   corazón, persistencia tras force-stop), pantalla Favoritos con 1 y 2 canales,
+>   borrado de fuente → "Favoritos no disponibles", reimportación → favorito
+>   restaurado, zapping 1/8 → 2/8, CH+/CH−, lista filtrada de 2 canales con vuelta
+>   circular, zapping desde Inicio y Favoritos, y VOD sin zapping. Mantener la
+>   flecha no encadena saltos. `assembleDebug`, tests y `assembleRelease` con R8
+>   en verde.
+> - Pendiente de la Fase 4: EPG/XMLTV con ahora/siguiente. La versión visible
+>   sigue siendo 0.3.0/Fase 3 hasta cerrar la fase; al terminarla subirá a
+>   0.4.0/Fase 4.
 
 # CONTEXT.md --- Proyecto de app IPTV para Android TV
 

@@ -156,7 +156,7 @@ fun LiveScreen(
         ChannelGrid(
             channels = channels,
             onChannelClick = { channel ->
-                onPlay(channel.toPlaybackRequest())
+                onPlay(channel.toPlaybackRequest(channels))
             },
             favoriteIds = favorites,
             onChannelLongClick = { channel ->

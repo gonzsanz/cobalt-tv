@@ -131,7 +131,7 @@ fun FavoritesScreen(
                 ChannelGrid(
                     channels = favoriteChannels,
                     onChannelClick = { channel ->
-                        onPlay(channel.toPlaybackRequest())
+                        onPlay(channel.toPlaybackRequest(favoriteChannels))
                     },
                     favoriteIds = favorites,
                     onChannelLongClick = { channel ->

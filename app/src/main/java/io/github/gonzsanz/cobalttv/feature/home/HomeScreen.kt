@@ -71,13 +71,14 @@ fun HomeScreen(
     val favoritesRepo = LocalFavorites.current
     val favorites by favoritesRepo.favorites.collectAsState()
     val hasRealChannels = catalog.channels.isNotEmpty()
-    val homeChannels = remember(hasRealChannels, catalog.channels) {
+    val allChannels = remember(hasRealChannels, catalog.channels) {
         if (hasRealChannels) {
-            catalog.channels.take(10).map { it.toUi() }
+            catalog.channels.map { it.toUi() }
         } else {
             DemoCatalog.channels.map { it.toUi() }
         }
     }
+    val homeChannels = remember(allChannels) { allChannels.take(10) }
     val bringHeroIntoView: () -> Unit = {
         scope.launch { listState.animateScrollToItem(0) }
     }
@@ -139,7 +140,7 @@ fun HomeScreen(
                 items(homeChannels, key = { it.id }) { channel ->
                     ChannelCard(
                         channel = channel,
-                        onClick = { onPlay(channel.channelToPlaybackRequest()) },
+                        onClick = { onPlay(channel.channelToPlaybackRequest(allChannels)) },
                         isFavorite = channel.id in favorites,
                         onLongClick = {
                             val added = favoritesRepo.toggle(channel.id)

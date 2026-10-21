@@ -4,12 +4,13 @@ Reproductor IPTV para Android TV, escrito en Kotlin con Jetpack Compose for TV y
 Media3. Pensado para uso personal y un grupo pequeño de amigos: cada usuario
 configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 
-> **Estado: Fase 3 (importación M3U).** La app importa listas M3U/M3U8 por URL
-> (y por archivo con el selector del sistema), tolera metadatos incompletos y
+> **Estado: Fase 4 en curso (TV en directo).** La app importa listas M3U/M3U8 por
+> URL (y por archivo con el selector del sistema), tolera metadatos incompletos y
 > guarda la lista en el dispositivo. Los canales reales aparecen en TV en
 > directo, Inicio y Búsqueda, con filtros por categoría y reproducción HLS/MP4.
-> Xtream Codes, EPG y favoritos persistentes llegan en las siguientes fases.
-> Versión actual: **0.3.0**. Verificada en el emulador Android TV (API 36) con
+> Ya incluye favoritos persistentes y zapping con el mando; EPG/XMLTV y Xtream
+> Codes llegan en las siguientes fases. Versión actual: **0.3.0** (subirá a
+> 0.4.0 al cerrar la fase). Verificada en el emulador Android TV (API 36) con
 > D-pad.
 
 ![Banner](app/src/main/res/drawable/tv_banner.png)
@@ -28,8 +29,12 @@ configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 | --- | --- |
 | ![Reproductor VOD](docs/screenshots/player-vod.png) | ![Error de reproducción](docs/screenshots/player-error.png) |
 
-Más pantallas: [series](docs/screenshots/series.png),
-[ajustes](docs/screenshots/settings.png) y [fuentes](docs/screenshots/sources.png).
+| Favoritos | Ajustes |
+| --- | --- |
+| ![Favoritos](docs/screenshots/favorites.png) | ![Ajustes](docs/screenshots/settings.png) |
+
+Más pantallas: [series](docs/screenshots/series.png) y
+[fuentes](docs/screenshots/sources.png).
 
 ## Qué hay ahora mismo
 
@@ -55,8 +60,12 @@ Más pantallas: [series](docs/screenshots/series.png),
 - Indicador de buffering, badge EN DIRECTO, keep-screen-on y pausa al salir de la app.
 - Panel de error con mensaje comprensible, Reintentar y Volver.
 - BACK sale del reproductor y devuelve a la pantalla de origen con el foco restaurado.
-- Favoritos vacío, fuentes con importar/actualizar/eliminar y ajustes con el
-  estado real de la lista.
+- Favoritos persistentes de canales: mantén pulsado OK en Inicio, TV en directo o
+  Favoritos; corazones, avisos y estados vacío/no disponibles.
+- Zapping en directo con Arriba/Abajo o CH+/CH− dentro de la lista abierta
+  (Todos, categoría, Inicio o Favoritos), con vuelta circular y contador n/total.
+- Fuentes con importar/actualizar/eliminar y ajustes con el estado real de la
+  lista.
 
 Las tarjetas de demo, y los canales de la lista de ejemplo, abren el reproductor
 con dos streams públicos de prueba: HLS (Big Buck Bunny, Mux) y MP4 progresivo
@@ -137,6 +146,18 @@ En algunos televisores el selector de archivos del sistema no está disponible;
 en ese caso usa la URL. La importación por archivo se probará en la Mi Box en la
 Fase 8.
 
+## Favoritos y zapping
+
+- **Favorito:** mantén pulsado OK sobre un canal en Inicio, TV en directo o
+  Favoritos. El corazón se rellena y aparece un aviso; repite para quitarlo.
+- **Favoritos:** la pantalla del rail reúne los canales guardados y mantiene los
+  IDs aunque cambies o borres la fuente. Si vuelve la misma lista, vuelven los
+  favoritos; si no, muestra **Favoritos no disponibles**.
+- **Zapping:** con un canal en directo, pulsa Arriba/Abajo o CH+/CH−. El salto se
+  limita a la lista desde la que abriste el canal y da la vuelta al llegar al
+  final. El contador de la cabecera (por ejemplo, **2 / 8**) indica la posición.
+  En películas y series las flechas no cambian de contenido.
+
 ## Instalar en la Mi Box
 
 1. Activa *Depuración USB/ADB* en la Mi Box (Ajustes → Información → compilar
@@ -171,12 +192,14 @@ app/src/main/java/io/github/gonzsanz/cobalttv/
   core/playback/         petición de reproducción y sesión en memoria
   data/catalog/          modelos, parser M3U, repositorio y persistencia
   data/demo/             catálogo de demostración y streams de prueba
+  data/favorites/        favoritos persistentes por ID de canal
   feature/
     home/ live/ movies/ series/ favorites/ search/ settings/ sources/
     player/              reproductor Media3 y controles de TV
   ui/
     CobaltTvApp.kt       shell, navegación lateral, NavHost
     LocalCatalog.kt      CompositionLocal con el catálogo activo
+    LocalFavorites.kt    CompositionLocal con los favoritos
     model/               mapeo de canales importados a la UI
     components/          tarjetas de contenido
     navigation/          destinos
@@ -193,7 +216,7 @@ observan. Añadir Xtream Codes en la Fase 5 no debería cambiar las pantallas.
 | 1 | Proyecto, launcher TV, navegación, inicio, datos demo | ✅ |
 | 2 | Media3: reproducción, controles, ciclo de vida, errores | ✅ |
 | 3 | Importación M3U por URL y archivo + parser tolerante | ✅ |
-| 4 | Favoritos, EPG/XMLTV y zapping | ⏳ |
+| 4 | TV en directo: favoritos y zapping hechos; falta EPG/XMLTV | ⏳ En curso |
 | 5 | Xtream Codes (login, categorías, canales, VOD) | ⏳ |
 | 6 | Películas y series: fichas, temporadas, episodios | ⏳ |
 | 7 | Room, DataStore, caché de imágenes, pulido | ⏳ |

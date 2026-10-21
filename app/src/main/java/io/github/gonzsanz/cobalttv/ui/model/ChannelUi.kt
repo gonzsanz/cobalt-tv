@@ -1,6 +1,7 @@
 package io.github.gonzsanz.cobalttv.ui.model
 
 import androidx.compose.ui.graphics.Color
+import io.github.gonzsanz.cobalttv.core.playback.LiveChannel
 import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.catalog.Channel
 import io.github.gonzsanz.cobalttv.data.demo.DemoChannel
@@ -59,9 +60,20 @@ fun DemoChannel.toUi(): ChannelUi = ChannelUi(
     isDemo = true,
 )
 
-fun ChannelUi.toPlaybackRequest(): PlaybackRequest = PlaybackRequest(
+fun ChannelUi.toPlaybackRequest(
+    zapChannels: List<ChannelUi> = emptyList(),
+): PlaybackRequest = PlaybackRequest(
     title = name,
     subtitle = "$category · $nowPlaying",
     url = streamUrl,
     isLive = true,
+    liveChannelId = id,
+    liveChannels = zapChannels.map { channel ->
+        LiveChannel(
+            id = channel.id,
+            title = channel.name,
+            subtitle = "${channel.category} · ${channel.nowPlaying}",
+            url = channel.streamUrl,
+        )
+    },
 )
