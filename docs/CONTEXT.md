@@ -122,6 +122,50 @@
 >   recuperación tras reiniciar la app; VOD sin línea de EPG. 19 tests unitarios
 >   (M3U y XMLTV), `assembleDebug` y `assembleRelease` con R8 en verde.
 > - Versión visible: **0.4.0 / Fase 4**. Siguiente fase: Xtream Codes.
+>
+> **Fase 5 completada (2026-10-21)**
+>
+> - Cliente Xtream Codes con `player_api.php` sobre OkHttp: login, categorías y
+>   listas de canales, VOD y series. Las secciones VOD/series son opcionales: un
+>   servidor que no las implemente no impide importar la TV en directo. Los
+>   arrays ausentes, los IDs numéricos o de texto y los metadatos `null` se
+>   normalizan sin romper la importación.
+> - Modelos normalizados compartidos con M3U: `Channel` y nuevos `VodItem` y
+>   `SeriesItem` (con `sourceId` para pedir temporadas/episodios en la Fase 6).
+>   IDs SHA-256 estables por servidor, usuario y contenido; los favoritos siguen
+>   funcionando con los canales Xtream.
+> - URLs de reproducción: `direct_source` cuando es HTTP(S); si no,
+>   `/live/{user}/{pass}/{stream_id}.m3u8` y
+>   `/movie/{user}/{pass}/{stream_id}.{ext}`. Se conserva un subdirectorio del
+>   servidor (`/iptv`, etc.) y se eliminan endpoints pegados por el usuario
+>   (`player_api.php`, `xmltv.php`, `get.php`).
+> - Una sola fuente activa también para Xtream. El catálogo normalizado se
+>   cachea en `xtream_cache.json` y la fuente en `cobalt_catalog`; al importar
+>   M3U se borran la caché y las credenciales Xtream, y viceversa. Actualizar
+>   vuelve a consultar la API; un fallo conserva la fuente y el catálogo activos.
+> - Credenciales Xtream cifradas con AES/GCM y una clave de Android Keystore
+>   (`cobalt_xtream_credentials`). No se guardan en texto plano; si la clave ya
+>   no puede descifrarlas, se limpian y se pide reimportar la cuenta. Nunca se
+>   registran URLs, credenciales ni respuestas de la API.
+> - Formulario de Fuentes con servidor, usuario y contraseña, foco de TV,
+>   validación, spinner y errores en español (credenciales, HTTP 401/403/404/5xx,
+>   cuenta caducada, red, respuestas inválidas). La tarjeta activa muestra
+>   canales, películas, series, servidor y estado de la guía. El campo de
+>   contraseña se limpia al completar la importación.
+> - EPG Xtream mediante `xmltv.php` derivado del servidor; se reutilizan el
+>   parser XMLTV, la ventana de 24 h y la UI de ahora/siguiente. Si el servidor
+>   no ofrece guía, los canales siguen en "En directo".
+> - Verificación en emulador API 36 contra un servidor Xtream local: login,
+>   categorías, 6 canales, 2 películas y 2 series normalizados; EPG ahora/
+>   siguiente en TV y reproductor; zapping 2/6 → 3/6; reproducción HLS de un
+>   canal con `direct_source`; favorito persistente; actualización; error de
+>   contraseña sin perder la fuente; restauración tras force-stop con
+>   credenciales descifradas; caché y prefs inspeccionadas para confirmar que no
+>   hay credenciales en claro. 31 tests unitarios (M3U, XMLTV y Xtream),
+>   `assembleDebug` y `assembleRelease` con R8 en verde.
+> - Versión visible: **0.5.0 / Fase 5**. Pendiente: fichas y reproducción de
+>   películas/series en la Fase 6; prueba en la Mi Box sin tocar el dispositivo
+>   hasta tener permiso.
 
 # CONTEXT.md --- Proyecto de app IPTV para Android TV
 

@@ -4,14 +4,14 @@ Reproductor IPTV para Android TV, escrito en Kotlin con Jetpack Compose for TV y
 Media3. Pensado para uso personal y un grupo pequeño de amigos: cada usuario
 configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 
-> **Estado: Fase 4 completada (TV en directo).** La app importa listas M3U/M3U8
-> por URL (y por archivo con el selector del sistema), tolera metadatos
-> incompletos y guarda la lista en el dispositivo. Los canales reales aparecen en
-> TV en directo, Inicio y Búsqueda, con filtros por categoría y reproducción
-> HLS/MP4. Incluye favoritos persistentes, zapping con el mando y EPG/XMLTV
-> (ahora/siguiente) cuando la lista declara `url-tvg` o `x-tvg-url`. Xtream Codes
-> llega en la Fase 5. Versión actual: **0.4.0**. Verificada en el emulador
-> Android TV (API 36) con D-pad.
+> **Estado: Fase 5 completada (Xtream Codes).** La app importa listas M3U/M3U8
+> por URL (y por archivo con el selector del sistema) y cuentas Xtream Codes
+> (servidor, usuario y contraseña). Los canales reales aparecen en TV en
+> directo, Inicio y Búsqueda, con filtros por categoría y reproducción HLS/MP4.
+> Incluye favoritos persistentes, zapping con el mando, EPG/XMLTV
+> (ahora/siguiente) y normalización de películas y series Xtream para la Fase 6.
+> Versión actual: **0.5.0**. Verificada en el emulador Android TV (API 36) con
+> D-pad contra un servidor Xtream local de pruebas.
 
 ![Banner](app/src/main/res/drawable/tv_banner.png)
 
@@ -34,7 +34,8 @@ configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 | ![Favoritos](docs/screenshots/favorites.png) | ![Ajustes](docs/screenshots/settings.png) |
 
 Más pantallas: [series](docs/screenshots/series.png),
-[fuentes](docs/screenshots/sources.png) y
+[fuentes](docs/screenshots/sources.png),
+[formulario Xtream](docs/screenshots/sources-xtream.png) y
 [error de reproducción](docs/screenshots/player-error.png).
 
 ## Qué hay ahora mismo
@@ -49,12 +50,15 @@ Más pantallas: [series](docs/screenshots/series.png),
 - Búsqueda sobre los canales importados y el catálogo demo, con teclado en pantalla.
 - Importación M3U por URL y por archivo local (selector SAF del sistema), con
   lista de ejemplo incluida.
+- Importación Xtream Codes con servidor, usuario y contraseña; normaliza
+  categorías, canales, películas y series, y construye URLs HLS/MP4 compatibles.
+  Las credenciales se cifran con Android Keystore y nunca se escriben en logs.
 - Parser tolerante: BOM/CRLF, listas sin `#EXTM3U`, directivas desconocidas,
   comas entre comillas, `#EXTGRP`, URLs sueltas, deduplicación e IDs estables.
-- Una fuente activa a la vez: importar otra sustituye la anterior. La lista se
-  cachea en el dispositivo y se restaura al volver a abrir la app.
-- Errores de descarga/parseo en español, límite de importación de 16 MB y sin
-  registrar URLs ni credenciales.
+- Una fuente activa a la vez (M3U o Xtream): importar otra sustituye la anterior.
+  El catálogo se cachea en el dispositivo y se restaura al volver a abrir la app.
+- Errores de descarga, autenticación y parseo en español, límites de 16 MB para
+  M3U y 32 MB para Xtream, y sin registrar URLs ni credenciales.
 - Reproductor Media3 a pantalla completa con HLS y MP4 progresivo.
 - Controles con foco de TV: play/pausa, −10 s, +10 s, barra de progreso y tiempos.
 - Autoocultado de controles a los 5 s, reaparición con cualquier tecla del mando.
@@ -65,12 +69,12 @@ Más pantallas: [series](docs/screenshots/series.png),
   Favoritos; corazones, avisos y estados vacío/no disponibles.
 - Zapping en directo con Arriba/Abajo o CH+/CH− dentro de la lista abierta
   (Todos, categoría, Inicio o Favoritos), con vuelta circular y contador n/total.
-- EPG/XMLTV opcional: lee `url-tvg` o `x-tvg-url` del encabezado M3U, filtra los
-  canales activos y una ventana de 24 h, y muestra ahora/siguiente en las
-  tarjetas, la cabecera de TV y el reproductor. Si falta la guía o un programa,
-  lo indica sin afectar a la reproducción.
+- EPG/XMLTV opcional: lee `url-tvg` o `x-tvg-url` del encabezado M3U o usa
+  `xmltv.php` en Xtream, filtra los canales activos y una ventana de 24 h, y
+  muestra ahora/siguiente en las tarjetas, la cabecera de TV y el reproductor.
+  Si falta la guía o un programa, lo indica sin afectar a la reproducción.
 - Fuentes con importar/actualizar/eliminar, estado de la guía y ajustes con el
-  estado real de la lista.
+  estado real de la fuente.
 
 Las tarjetas de demo, y los canales de la lista de ejemplo, abren el reproductor
 con dos streams públicos de prueba: HLS (Big Buck Bunny, Mux) y MP4 progresivo
@@ -116,7 +120,7 @@ En Windows:
 
 El APK queda en `app/build/outputs/apk/debug/app-debug.apk`.
 
-Tests unitarios (parser M3U, parser XMLTV y normalización; 19 casos):
+Tests unitarios (parser M3U, parser XMLTV y normalización Xtream; 31 casos):
 
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest
@@ -157,6 +161,25 @@ directo**; para probar la guía usa una lista propia que incluya `url-tvg`.
 En algunos televisores el selector de archivos del sistema no está disponible;
 en ese caso usa la URL. La importación por archivo se probará en la Mi Box en la
 Fase 8.
+
+## Importar Xtream Codes
+
+1. Abre **Fuentes** desde Inicio o Ajustes y baja hasta **Añadir Xtream Codes**.
+2. Escribe el servidor (por ejemplo, `http://mi-servidor:8080`), el usuario y la
+   contraseña.
+3. Pulsa **Conectar e importar**. Cobalt TV consulta la API, normaliza las
+   categorías y los canales, y guarda también películas y series para la Fase 6.
+
+La cuenta sustituye a la fuente activa, igual que una lista M3U. Si el login o la
+descarga fallan, la fuente anterior sigue activa y se muestra el error. Las
+credenciales se cifran con una clave de Android Keystore y se guardan solo en el
+almacenamiento privado de la app; las URLs de reproducción y la guía se tratan
+como datos privados y no se escriben en los logs. Xtream también puede aportar
+EPG mediante `xmltv.php`; si el servidor no la ofrece, los canales siguen
+funcionando con **En directo**.
+
+Las películas y series Xtream ya se normalizan y se cachean, pero sus fichas,
+temporadas y episodios se muestran en la Fase 6.
 
 ## Favoritos y zapping
 
@@ -218,6 +241,7 @@ app/src/main/java/io/github/gonzsanz/cobalttv/
   core/designsystem/     tema, tipografía, foco, componentes, iconos
   core/playback/         petición de reproducción y sesión en memoria
   data/catalog/          modelos, parser M3U, repositorio y persistencia
+  data/xtream/           cliente API, normalización, caché y credenciales cifradas
   data/demo/             catálogo de demostración y streams de prueba
   data/epg/              modelos, parser XMLTV, repositorio y estado de la guía
   data/favorites/        favoritos persistentes por ID de canal
@@ -234,9 +258,11 @@ app/src/main/java/io/github/gonzsanz/cobalttv/
     navigation/          destinos
 ```
 
-La UI no conoce el formato M3U ni Xtream Codes: los importadores producen
-`Channel` normalizados y el repositorio expone un `StateFlow` que las pantallas
-observan. Añadir Xtream Codes en la Fase 5 no debería cambiar las pantallas.
+La UI no conoce el formato M3U ni la API de Xtream Codes: ambos importadores
+producen `Channel`, `VodItem` y `SeriesItem` normalizados, y el repositorio
+expone un `StateFlow` que las pantallas observan. Las películas y series Xtream
+quedan listas para que la Fase 6 añada fichas y reproducción sin rehacer el
+importador.
 
 ## Fases
 
@@ -246,7 +272,7 @@ observan. Añadir Xtream Codes en la Fase 5 no debería cambiar las pantallas.
 | 2 | Media3: reproducción, controles, ciclo de vida, errores | ✅ |
 | 3 | Importación M3U por URL y archivo + parser tolerante | ✅ |
 | 4 | TV en directo: favoritos, zapping y EPG/XMLTV | ✅ |
-| 5 | Xtream Codes (login, categorías, canales, VOD) | ⏳ |
+| 5 | Xtream Codes (login, categorías, canales, VOD y series) | ✅ |
 | 6 | Películas y series: fichas, temporadas, episodios | ⏳ |
 | 7 | Room, DataStore, caché de imágenes, pulido | ⏳ |
 | 8 | Pruebas en Mi Box, APK firmado, distribución privada | ⏳ |
@@ -258,11 +284,11 @@ No se avanza de fase hasta que la anterior compila y se ha probado.
 - El repositorio no incluye listas, credenciales ni streams de terceros. Solo
   incluye una lista de ejemplo con un stream público de pruebas.
 - Usa solo fuentes que tengas derecho a reproducir.
-- Las credenciales de Xtream Codes se guardarán en el dispositivo, nunca en el
-  repositorio ni en logs.
-- Las URLs de las fuentes y de la guía se tratan como datos privados: la lista
-  se cachea en el almacenamiento de la app y ninguna de las dos se escribe en los
-  logs.
+- Las credenciales de Xtream Codes se cifran con Android Keystore y se guardan
+  solo en el dispositivo; nunca se incluyen en el repositorio ni en los logs.
+- Las URLs de las fuentes, de reproducción y de la guía se tratan como datos
+  privados: el catálogo se cachea en el almacenamiento privado de la app y
+  ninguna URL se escribe en los logs.
 - La app no envía datos a servidores propios ni incluye analítica.
 
 El contexto completo del proyecto y las decisiones tomadas están en

@@ -50,6 +50,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
@@ -66,7 +68,6 @@ import io.github.gonzsanz.cobalttv.core.designsystem.SuccessGreen
 import io.github.gonzsanz.cobalttv.core.designsystem.TextMuted
 import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
-import io.github.gonzsanz.cobalttv.core.designsystem.WarningAmber
 import io.github.gonzsanz.cobalttv.data.catalog.PlaylistSource
 import io.github.gonzsanz.cobalttv.data.catalog.SourceKind
 import io.github.gonzsanz.cobalttv.data.epg.EpgStatus
@@ -92,8 +93,17 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
             "Guía EPG: sin canales con tvg-id."
         else -> "Guía EPG: ${epg.shortStatusLabel()}."
     }
+    val m3uError = state.importError.takeIf {
+        state.importErrorTarget == SourceKind.Url || state.importErrorTarget == SourceKind.File
+    }
+    val xtreamError = state.importError.takeIf {
+        state.importErrorTarget == SourceKind.Xtream
+    }
 
     var url by rememberSaveable { mutableStateOf("") }
+    var xtreamServer by rememberSaveable { mutableStateOf("") }
+    var xtreamUser by rememberSaveable { mutableStateOf("") }
+    var xtreamPassword by remember { mutableStateOf("") }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var pickerError by remember { mutableStateOf<String?>(null) }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -101,6 +111,10 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
     val urlFocusRequester = remember { FocusRequester() }
     val importFocusRequester = remember { FocusRequester() }
     val fileFocusRequester = remember { FocusRequester() }
+    val xtreamServerFocusRequester = remember { FocusRequester() }
+    val xtreamUserFocusRequester = remember { FocusRequester() }
+    val xtreamPasswordFocusRequester = remember { FocusRequester() }
+    val xtreamImportFocusRequester = remember { FocusRequester() }
     val watchFocusRequester = remember { FocusRequester() }
     val cancelDeleteFocusRequester = remember { FocusRequester() }
 
@@ -116,6 +130,24 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
     val importUrl: () -> Unit = {
         keyboard?.hide()
         if (url.isNotBlank()) catalog.importFromUrl(url)
+    }
+
+    val importXtream: () -> Unit = {
+        keyboard?.hide()
+        if (
+            xtreamServer.isNotBlank() &&
+            xtreamUser.isNotBlank() &&
+            xtreamPassword.isNotBlank()
+        ) {
+            catalog.importXtream(xtreamServer, xtreamUser, xtreamPassword)
+        }
+    }
+
+    // Clear the password only when the active source changes (successful
+    // import, restore or removal). A failed Xtream login must keep it so the
+    // user can correct the username or retry.
+    LaunchedEffect(state.source?.kind, state.source?.importedAt) {
+        xtreamPassword = ""
     }
 
     LaunchedEffect(state.isLoading, source != null) {
@@ -198,7 +230,7 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
                     },
                     isLoading = state.isLoading,
                     hasSource = source != null,
-                    importError = state.importError,
+                    importError = m3uError,
                     pickerError = pickerError,
                     urlFocusRequester = urlFocusRequester,
                     importFocusRequester = importFocusRequester,
@@ -207,19 +239,38 @@ fun SourcesScreen(onOpenLive: () -> Unit) {
             }
 
             item {
-                InfoRow(
-                    title = "Xtream Codes",
-                    description = "Servidor, usuario y contraseña. Llega en la Fase 5.",
-                    badge = "FASE 5",
-                    badgeColor = WarningAmber,
+                XtreamCard(
+                    server = xtreamServer,
+                    username = xtreamUser,
+                    password = xtreamPassword,
+                    onServerChange = {
+                        xtreamServer = it
+                        catalog.clearImportError()
+                    },
+                    onUsernameChange = {
+                        xtreamUser = it
+                        catalog.clearImportError()
+                    },
+                    onPasswordChange = {
+                        xtreamPassword = it
+                        catalog.clearImportError()
+                    },
+                    onImport = importXtream,
+                    isLoading = state.isLoading,
+                    hasSource = source != null,
+                    importError = xtreamError,
+                    serverFocusRequester = xtreamServerFocusRequester,
+                    usernameFocusRequester = xtreamUserFocusRequester,
+                    passwordFocusRequester = xtreamPasswordFocusRequester,
+                    importFocusRequester = xtreamImportFocusRequester,
                 )
             }
 
             item {
                 Text(
-                    text = "La lista se guarda solo en este dispositivo y no se envía a " +
-                        "ningún servidor propio. Usa únicamente fuentes que tengas derecho " +
-                        "a reproducir.",
+                    text = "La fuente se guarda solo en este dispositivo y no se envía a " +
+                        "ningún servidor propio. Las credenciales Xtream se almacenan " +
+                        "cifradas. Usa únicamente fuentes que tengas derecho a reproducir.",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted,
                     modifier = Modifier.padding(top = 6.dp, bottom = 6.dp),
@@ -285,17 +336,21 @@ private fun ActiveSourceCard(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${source.kind.label()} · ${channelCountLabel(source.channelCount)} · " +
+                    text = "${source.kind.label()} · ${source.contentSummary()} · " +
                         "Importada el ${formatDate(source.importedAt)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (source.kind == SourceKind.File) {
+                if (source.kind == SourceKind.File || source.kind == SourceKind.Xtream) {
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = source.location,
+                        text = if (source.kind == SourceKind.Xtream) {
+                            "Servidor: ${source.serverLabel()}"
+                        } else {
+                            source.location
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = TextMuted,
                         maxLines = 1,
@@ -356,7 +411,7 @@ private fun ActiveSourceCard(
                     modifier = Modifier.focusRequester(watchFocusRequester),
                 )
                 Spacer(Modifier.width(12.dp))
-                if (source.kind == SourceKind.Url) {
+                if (source.kind == SourceKind.Url || source.kind == SourceKind.Xtream) {
                     CobaltButton(
                         text = "Actualizar",
                         onClick = onRefresh,
@@ -418,11 +473,14 @@ private fun ImportCard(
             color = TextMuted,
         )
         Spacer(Modifier.height(8.dp))
-        UrlField(
+        SourceField(
             value = url,
             onValueChange = onUrlChange,
+            placeholder = "https://ejemplo.com/lista.m3u",
             focusRequester = urlFocusRequester,
             enabled = !isLoading,
+            keyboardType = KeyboardType.Uri,
+            imeAction = ImeAction.Go,
             onDone = onImport,
             onDpadDown = {
                 keyboard?.hide()
@@ -489,13 +547,179 @@ private fun ImportCard(
 }
 
 @Composable
-private fun UrlField(
+private fun XtreamCard(
+    server: String,
+    username: String,
+    password: String,
+    onServerChange: (String) -> Unit,
+    onUsernameChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onImport: () -> Unit,
+    isLoading: Boolean,
+    hasSource: Boolean,
+    importError: String?,
+    serverFocusRequester: FocusRequester,
+    usernameFocusRequester: FocusRequester,
+    passwordFocusRequester: FocusRequester,
+    importFocusRequester: FocusRequester,
+) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    val canImport = !isLoading &&
+        server.isNotBlank() &&
+        username.isNotBlank() &&
+        password.isNotBlank()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.border, RoundedCornerShape(20.dp))
+            .padding(22.dp),
+    ) {
+        Text(
+            text = if (hasSource) "Sustituir por Xtream Codes" else "Añadir Xtream Codes",
+            style = MaterialTheme.typography.titleLarge,
+            color = TextPrimary,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "Conecta con el servidor, el usuario y la contraseña de tu cuenta. " +
+                "Cobalt TV importará canales, películas y series.",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+        )
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = "SERVIDOR",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        SourceField(
+            value = server,
+            onValueChange = onServerChange,
+            placeholder = "http://mi-servidor:8080",
+            focusRequester = serverFocusRequester,
+            enabled = !isLoading,
+            keyboardType = KeyboardType.Uri,
+            imeAction = ImeAction.Next,
+            onDone = {
+                runCatching { usernameFocusRequester.requestFocus() }
+            },
+            onDpadDown = {
+                keyboard?.hide()
+                runCatching { usernameFocusRequester.requestFocus() }
+            },
+        )
+
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = "USUARIO",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        SourceField(
+            value = username,
+            onValueChange = onUsernameChange,
+            placeholder = "usuario",
+            focusRequester = usernameFocusRequester,
+            enabled = !isLoading,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next,
+            onDone = {
+                runCatching { passwordFocusRequester.requestFocus() }
+            },
+            onDpadDown = {
+                keyboard?.hide()
+                runCatching { passwordFocusRequester.requestFocus() }
+            },
+        )
+
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = "CONTRASEÑA",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        SourceField(
+            value = password,
+            onValueChange = onPasswordChange,
+            placeholder = "contraseña",
+            focusRequester = passwordFocusRequester,
+            enabled = !isLoading,
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Go,
+            visualTransformation = PasswordVisualTransformation(),
+            onDone = onImport,
+            onDpadDown = {
+                keyboard?.hide()
+                runCatching { importFocusRequester.requestFocus() }
+            },
+        )
+
+        if (importError != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = importError,
+                style = MaterialTheme.typography.bodySmall,
+                color = ErrorRed,
+            )
+            if (hasSource) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "La fuente actual sigue activa.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CobaltButton(
+                text = if (isLoading) "Conectando…" else "Conectar e importar",
+                onClick = onImport,
+                icon = Icons.Filled.Add,
+                enabled = canImport,
+                modifier = Modifier.focusRequester(importFocusRequester),
+            )
+            if (isLoading) {
+                Spacer(Modifier.width(16.dp))
+                CobaltSpinner(size = 22.dp, strokeWidth = 3.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "Leyendo la cuenta…",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = "El usuario y la contraseña se guardan cifrados en este dispositivo. " +
+                "No se escriben en los registros.",
+            style = MaterialTheme.typography.labelSmall,
+            color = TextMuted,
+        )
+    }
+}
+
+@Composable
+private fun SourceField(
     value: String,
     onValueChange: (String) -> Unit,
+    placeholder: String,
     focusRequester: FocusRequester,
     enabled: Boolean,
+    keyboardType: KeyboardType,
+    imeAction: ImeAction,
     onDone: () -> Unit,
     onDpadDown: () -> Unit,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     var focused by remember { mutableStateOf(false) }
@@ -517,7 +741,7 @@ private fun UrlField(
         Box(Modifier.weight(1f)) {
             if (value.isEmpty()) {
                 Text(
-                    text = "https://ejemplo.com/lista.m3u",
+                    text = placeholder,
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextMuted,
                 )
@@ -547,11 +771,16 @@ private fun UrlField(
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary),
                 cursorBrush = SolidColor(CobaltSoft),
                 singleLine = true,
+                visualTransformation = visualTransformation,
                 keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Go,
-                    keyboardType = KeyboardType.Uri,
+                    imeAction = imeAction,
+                    keyboardType = keyboardType,
                 ),
                 keyboardActions = KeyboardActions(
+                    onNext = {
+                        keyboard?.hide()
+                        onDone()
+                    },
                     onGo = {
                         keyboard?.hide()
                         if (value.isNotBlank()) onDone()
@@ -587,46 +816,26 @@ private fun StatusBadge(text: String, color: Color) {
     }
 }
 
-@Composable
-private fun InfoRow(
-    title: String,
-    description: String,
-    badge: String,
-    badgeColor: Color,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
-            .border(1.dp, MaterialTheme.colorScheme.border, RoundedCornerShape(16.dp))
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = TextPrimary,
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
-            )
-        }
-        Text(
-            text = badge,
-            style = MaterialTheme.typography.labelSmall,
-            color = badgeColor,
-        )
-    }
-}
-
 private fun SourceKind.label(): String = when (this) {
     SourceKind.Url -> "M3U por URL"
     SourceKind.File -> "Archivo local"
+    SourceKind.Xtream -> "Xtream Codes"
 }
+
+private fun PlaylistSource.contentSummary(): String = buildList {
+    add(channelCountLabel(channelCount))
+    if (movieCount > 0) {
+        add(if (movieCount == 1) "1 película" else "$movieCount películas")
+    }
+    if (seriesCount > 0) {
+        add(if (seriesCount == 1) "1 serie" else "$seriesCount series")
+    }
+}.joinToString(" · ")
+
+private fun PlaylistSource.serverLabel(): String = location
+    .removePrefix("https://")
+    .removePrefix("http://")
+    .trimEnd('/')
 
 private fun formatDate(timestamp: Long): String {
     if (timestamp <= 0L) return "fecha desconocida"

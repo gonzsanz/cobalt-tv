@@ -206,7 +206,8 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "Cobalt TV 0.4.0 · Fase 4 · Listas M3U + EPG · Contenido de demostración",
+                    text = "Cobalt TV 0.5.0 · Fase 5 · M3U + Xtream Codes + EPG · " +
+                        "Contenido de demostración",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted,
                 )

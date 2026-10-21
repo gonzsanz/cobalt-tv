@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.gonzsanz.cobalttv"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
     }
 
     buildTypes {
@@ -66,4 +66,5 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
 
     testImplementation(libs.junit)
+    testImplementation(libs.json)
 }

@@ -71,7 +71,7 @@ fun SettingsScreen(
                         catalog.isLoading && source == null -> "Cargando la lista guardada…"
                         source != null ->
                             "${source.name} · ${channelCountLabel(catalog.channels.size)}"
-                        else -> "Sin lista configurada · M3U por URL o archivo"
+                        else -> "Sin fuente configurada · M3U o Xtream Codes"
                     },
                     icon = CobaltIcons.Sources,
                     onClick = onOpenSources,
@@ -93,7 +93,7 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     title = "Acerca de Cobalt TV",
-                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 4",
+                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 5",
                     icon = Icons.Filled.Info,
                     onClick = { onToast("Cobalt TV ${BuildConfig.VERSION_NAME}, uso personal.") },
                 )
