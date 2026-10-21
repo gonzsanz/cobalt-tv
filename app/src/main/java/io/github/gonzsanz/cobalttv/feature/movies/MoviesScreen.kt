@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,6 +32,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
 import io.github.gonzsanz.cobalttv.data.catalog.VodItem
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
+import kotlinx.coroutines.delay
 import io.github.gonzsanz.cobalttv.ui.components.CategorySidebar
 import io.github.gonzsanz.cobalttv.ui.components.VodPosterCard
 
@@ -83,6 +85,15 @@ fun MoviesScreen(onOpenMovie: (VodItem) -> Unit) {
     var lastId by rememberSaveable { mutableStateOf<String?>(null) }
     val focusIndex = remember(visible, lastId) { visible.indexOfFirst { it.id == lastId }.coerceAtLeast(0) }
     val firstPoster = remember { FocusRequester() }
+    var jumpTick by remember { mutableIntStateOf(0) }
+    // Choosing a category moves the cursor to the content on the right.
+    LaunchedEffect(jumpTick) {
+        if (jumpTick == 0) return@LaunchedEffect
+        repeat(8) {
+            delay(80)
+            if (runCatching { firstPoster.requestFocus() }.getOrDefault(false)) return@LaunchedEffect
+        }
+    }
     InitialFocusEffect(firstPoster)
 
     Column(Modifier.fillMaxSize()) {
@@ -96,7 +107,10 @@ fun MoviesScreen(onOpenMovie: (VodItem) -> Unit) {
                 categories = categories,
                 counts = counts,
                 selected = selected,
-                onSelect = { selected = it },
+                onSelect = {
+                    selected = it
+                    jumpTick++
+                },
                 modifier = Modifier.width(190.dp).fillMaxHeight(),
             )
             LazyVerticalGrid(

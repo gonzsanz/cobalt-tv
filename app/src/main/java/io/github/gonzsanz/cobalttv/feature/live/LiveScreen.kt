@@ -141,6 +141,15 @@ fun LiveScreen(
     }
 
     val firstRowFocus = remember { FocusRequester() }
+    var jumpTick by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    // Choosing a category moves the cursor to the channel list on the right.
+    LaunchedEffect(jumpTick) {
+        if (jumpTick == 0) return@LaunchedEffect
+        repeat(8) {
+            delay(80)
+            if (runCatching { firstRowFocus.requestFocus() }.getOrDefault(false)) return@LaunchedEffect
+        }
+    }
     val firstCategoryFocus = remember { FocusRequester() }
     LaunchedEffect(catalog.isLoading, hasRealChannels) {
         if (catalog.isLoading && !hasRealChannels) return@LaunchedEffect
@@ -173,7 +182,10 @@ fun LiveScreen(
                 categories = categories,
                 counts = counts,
                 selected = selectedCategory,
-                onSelect = { selectedCategory = it },
+                onSelect = {
+                    selectedCategory = it
+                    jumpTick++
+                },
                 firstFocus = firstCategoryFocus,
                 modifier = Modifier.width(176.dp).fillMaxHeight(),
             )
