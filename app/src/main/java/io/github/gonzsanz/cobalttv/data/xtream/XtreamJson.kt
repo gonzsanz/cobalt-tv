@@ -4,6 +4,7 @@ import io.github.gonzsanz.cobalttv.data.catalog.Channel
 import io.github.gonzsanz.cobalttv.data.catalog.SeriesDetail
 import io.github.gonzsanz.cobalttv.data.catalog.SeriesEpisode
 import io.github.gonzsanz.cobalttv.data.catalog.SeriesItem
+import io.github.gonzsanz.cobalttv.data.catalog.VodDetail
 import io.github.gonzsanz.cobalttv.data.catalog.VodItem
 import java.security.MessageDigest
 import okhttp3.HttpUrl
@@ -223,6 +224,20 @@ object XtreamJson {
             )
         }
         return series
+    }
+
+    fun parseVodInfo(root: JSONObject): VodDetail {
+        val info = root.optJSONObject("info") ?: return VodDetail()
+        fun first(vararg keys: String): String? = keys.firstNotNullOfOrNull { text(info, it) }
+        return VodDetail(
+            plot = first("plot", "description"),
+            genre = first("genre"),
+            cast = first("cast", "actors"),
+            director = first("director"),
+            duration = first("duration"),
+            rating = first("rating", "rating_5based")?.takeIf { it != "0" },
+            releaseDate = first("releasedate", "release_date", "releaseDate"),
+        )
     }
 
     fun parseSeriesInfo(

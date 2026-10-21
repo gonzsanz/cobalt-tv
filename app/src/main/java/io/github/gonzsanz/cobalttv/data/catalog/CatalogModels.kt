@@ -65,6 +65,17 @@ data class SeriesEpisode(
     val duration: String? = null,
 )
 
+/** Extra movie metadata requested from the provider when a title is opened. */
+data class VodDetail(
+    val plot: String? = null,
+    val genre: String? = null,
+    val cast: String? = null,
+    val director: String? = null,
+    val duration: String? = null,
+    val rating: String? = null,
+    val releaseDate: String? = null,
+)
+
 data class SeriesDetail(
     val plot: String?,
     val episodes: List<SeriesEpisode>,

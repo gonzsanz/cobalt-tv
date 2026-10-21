@@ -371,4 +371,18 @@ class XtreamJsonTest {
         )
         val detail = XtreamJson.parseSeriesInfo(root, credentials, base)
         assertEquals(listOf(1, 2), detail.episodes.map { it.season })
+    }
+    @Test
+    fun `parses vod info with alternative keys and missing fields`() {
+        val detail = XtreamJson.parseVodInfo(
+            JSONObject(
+                """{"info":{"description":"Trama","genre":"Drama","actors":"A, B","duration":"01:30:00","rating":"0","release_date":"2020-01-02"}}""",
+            ),
+        )
+        assertEquals("Trama", detail.plot)
+        assertEquals("A, B", detail.cast)
+        assertEquals("2020-01-02", detail.releaseDate)
+        assertNull(detail.rating)
+        assertNull(detail.director)
+        assertEquals(null, XtreamJson.parseVodInfo(JSONObject("{}")).plot)
     }}

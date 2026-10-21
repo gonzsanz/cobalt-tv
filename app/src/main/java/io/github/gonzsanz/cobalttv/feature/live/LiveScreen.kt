@@ -1,6 +1,7 @@
 ﻿package io.github.gonzsanz.cobalttv.feature.live
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -135,18 +136,8 @@ fun LiveScreen(
     var focusedId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(selectedCategory) { focusedId = null }
     val focusedChannel = channels.firstOrNull { it.id == focusedId } ?: channels.firstOrNull()
-    val previewTarget = channels.firstOrNull { it.id == focusedId }
     val startIndex = remember(channels) {
         channels.indexOfFirst { it.id == player.currentKey }.coerceAtLeast(0)
-    }
-
-    // Browsing previews the highlighted channel after a short pause, so moving
-    // quickly through the list does not open a stream per row.
-    LaunchedEffect(previewTarget?.id) {
-        val target = previewTarget ?: return@LaunchedEffect
-        if (target.id == player.currentKey) return@LaunchedEffect
-        delay(900)
-        player.play(target.streamUrl, target.id)
     }
 
     val firstRowFocus = remember { FocusRequester() }
@@ -212,7 +203,15 @@ fun LiveScreen(
                         nowMs = nowMs,
                         firstRowFocus = firstRowFocus,
                         onFocused = { focusedId = it },
-                        onClick = { channel -> onPlay(channel.toPlaybackRequest(channels)) },
+                        playingId = player.currentKey,
+                        onClick = { channel ->
+                            // First OK plays in the preview; OK again on the same channel goes full screen.
+                            if (channel.id == player.currentKey && player.error == null) {
+                                onPlay(channel.toPlaybackRequest(channels))
+                            } else {
+                                player.play(channel.streamUrl, channel.id)
+                            }
+                        },
                         onLongClick = { channel ->
                             val added = favoritesRepo.toggle(channel.id)
                             onToast(if (added) "Añadido a favoritos" else "Quitado de favoritos")
@@ -241,7 +240,7 @@ fun LiveScreen(
         }
 
         Text(
-            text = "OK: ver · Mantén OK: favorito · ←: categorías",
+            text = "OK: reproducir · OK de nuevo: pantalla completa · Mantén OK: favorito",
             style = MaterialTheme.typography.labelSmall,
             color = TextMuted,
             modifier = Modifier.padding(vertical = 8.dp),
@@ -272,6 +271,7 @@ private fun LiveHeader(count: Int, sourceName: String?, guide: String?, isDemo: 
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CategoryColumn(
     categories: List<String>,
@@ -319,8 +319,10 @@ private fun CategoryColumn(
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isSelected || focused) TextPrimary else TextSecondary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    overflow = if (focused) TextOverflow.Clip else TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (focused) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 500) else Modifier),
                 )
                 Text(
                     text = (counts[name] ?: 0).toString(),
@@ -339,6 +341,7 @@ private fun ChannelColumn(
     startIndex: Int,
     channels: List<ChannelUi>,
     favorites: Set<String>,
+    playingId: String?,
     epg: EpgState,
     nowMs: Long,
     firstRowFocus: FocusRequester,
@@ -406,7 +409,12 @@ private fun ChannelColumn(
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        overflow = if (focused) TextOverflow.Clip else TextOverflow.Ellipsis,
+                        modifier = if (focused) {
+                            Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 500)
+                        } else {
+                            Modifier
+                        },
                     )
                     Text(
                         text = when {
@@ -424,6 +432,14 @@ private fun ChannelColumn(
                         Spacer(Modifier.height(3.dp))
                         ProgressBar(programme, nowMs, Modifier.fillMaxWidth(0.7f))
                     }
+                }
+                if (channel.id == playingId) {
+                    Icon(
+                        imageVector = io.github.gonzsanz.cobalttv.core.designsystem.CobaltIcons.Play,
+                        contentDescription = "Reproduciendo",
+                        tint = Cobalt,
+                        modifier = Modifier.size(18.dp).padding(end = 2.dp),
+                    )
                 }
                 if (channel.id in favorites) {
                     Icon(

@@ -184,6 +184,16 @@ class CatalogRepository(context: Context) {
         }
     }
 
+    suspend fun loadVodDetail(movie: VodItem): VodDetail {
+        val source = _state.value.source
+        val stored = xtreamCredentials.load()
+        if (source?.kind != SourceKind.Xtream || stored == null) return VodDetail()
+        val credentials = XtreamCredentials(source.location, stored.username, stored.password)
+        return withContext(Dispatchers.IO) {
+            xtreamClient.loadVodDetail(credentials, movie.sourceId)
+        }
+    }
+
     /** Seasons and episodes come from the provider on demand, never from the cache. */
     suspend fun loadSeriesDetail(series: SeriesItem): SeriesDetail {
         val source = _state.value.source

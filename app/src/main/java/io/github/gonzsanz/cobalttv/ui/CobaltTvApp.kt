@@ -70,6 +70,8 @@ import io.github.gonzsanz.cobalttv.data.favorites.FavoritesRepository
 import io.github.gonzsanz.cobalttv.feature.favorites.FavoritesScreen
 import io.github.gonzsanz.cobalttv.feature.guide.GuideScreen
 import io.github.gonzsanz.cobalttv.feature.live.LiveScreen
+import io.github.gonzsanz.cobalttv.feature.movies.MovieDetailScreen
+import io.github.gonzsanz.cobalttv.feature.movies.MovieSession
 import io.github.gonzsanz.cobalttv.feature.movies.MoviesScreen
 import io.github.gonzsanz.cobalttv.feature.player.PlayerScreen
 import io.github.gonzsanz.cobalttv.feature.search.SearchScreen
@@ -176,7 +178,10 @@ fun CobaltTvApp() {
                     GuideScreen(onPlay = openPlayer)
                 }
                 composable(Destination.Movies.route) {
-                    MoviesScreen(onPlay = openPlayer)
+                    MoviesScreen(onOpenMovie = { item ->
+                        MovieSession.current = item
+                        navController.navigate(Destination.MOVIE_DETAIL_ROUTE)
+                    })
                 }
                 composable(Destination.Series.route) {
                     SeriesScreen(onOpenSeries = { item ->
@@ -206,6 +211,9 @@ fun CobaltTvApp() {
                             navController.navigateTopLevel(Destination.Live)
                         },
                     )
+                }
+                composable(Destination.MOVIE_DETAIL_ROUTE) {
+                    MovieDetailScreen(onPlay = openPlayer)
                 }
                 composable(Destination.SERIES_DETAIL_ROUTE) {
                     SeriesDetailScreen(onPlay = openPlayer)

@@ -29,7 +29,6 @@ import io.github.gonzsanz.cobalttv.core.designsystem.CobaltIcons
 import io.github.gonzsanz.cobalttv.core.designsystem.EmptyState
 import io.github.gonzsanz.cobalttv.core.designsystem.InitialFocusEffect
 import io.github.gonzsanz.cobalttv.core.designsystem.ScreenHeader
-import io.github.gonzsanz.cobalttv.core.playback.PlaybackRequest
 import io.github.gonzsanz.cobalttv.data.catalog.VodItem
 import io.github.gonzsanz.cobalttv.ui.LocalCatalog
 import io.github.gonzsanz.cobalttv.ui.components.CategorySidebar
@@ -38,7 +37,7 @@ import io.github.gonzsanz.cobalttv.ui.components.VodPosterCard
 private const val ALL = "Todas"
 
 @Composable
-fun MoviesScreen(onPlay: (PlaybackRequest) -> Unit) {
+fun MoviesScreen(onOpenMovie: (VodItem) -> Unit) {
     val catalog by LocalCatalog.current.state.collectAsState()
     val movies = catalog.movies
 
@@ -110,7 +109,7 @@ fun MoviesScreen(onPlay: (PlaybackRequest) -> Unit) {
                         subtitle = listOfNotNull(movie.year, movie.rating?.takeIf { it != "0" })
                             .joinToString(" · "),
                         imageUrl = movie.logoUrl,
-                        onClick = { onPlay(movie.toPlaybackRequest()) },
+                        onClick = { onOpenMovie(movie) },
                         modifier = if (index == 0) Modifier.focusRequester(firstPoster) else Modifier,
                     )
                 }
@@ -119,8 +118,3 @@ fun MoviesScreen(onPlay: (PlaybackRequest) -> Unit) {
     }
 }
 
-private fun VodItem.toPlaybackRequest() = PlaybackRequest(
-    title = name,
-    subtitle = listOfNotNull(year, group.takeIf { it.isNotBlank() }).joinToString(" · "),
-    url = streamUrl,
-)

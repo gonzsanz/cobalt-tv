@@ -1,6 +1,7 @@
 ﻿package io.github.gonzsanz.cobalttv.data.xtream
 
 import io.github.gonzsanz.cobalttv.data.catalog.SeriesDetail
+import io.github.gonzsanz.cobalttv.data.catalog.VodDetail
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -86,6 +87,16 @@ class XtreamClient(
             series = series,
             account = account,
         )
+    }
+
+    fun loadVodDetail(credentials: XtreamCredentials, vodId: String): VodDetail {
+        val base = XtreamJson.normalizeServer(credentials.server)
+        val normalized = credentials.copy(server = base.toString())
+        val url = XtreamJson.apiUrl(base, normalized, "get_vod_info")
+            .newBuilder()
+            .addQueryParameter("vod_id", vodId)
+            .build()
+        return XtreamJson.parseVodInfo(fetchObject(url))
     }
 
     fun loadSeriesDetail(credentials: XtreamCredentials, seriesId: String): SeriesDetail {

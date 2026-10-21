@@ -22,5 +22,6 @@ enum class Destination(
         const val SOURCES_ROUTE = "sources"
         const val PLAYER_ROUTE = "player"
         const val SERIES_DETAIL_ROUTE = "series_detail"
+        const val MOVIE_DETAIL_ROUTE = "movie_detail"
     }
 }

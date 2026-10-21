@@ -1,6 +1,8 @@
 ﻿package io.github.gonzsanz.cobalttv.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +34,7 @@ import io.github.gonzsanz.cobalttv.core.designsystem.TextPrimary
 import io.github.gonzsanz.cobalttv.core.designsystem.TextSecondary
 
 /** Vertical category list shared by the movie and series screens. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CategorySidebar(
     categories: List<String>,
@@ -78,8 +81,10 @@ fun CategorySidebar(
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isSelected || focused) TextPrimary else TextSecondary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    overflow = if (focused) TextOverflow.Clip else TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(if (focused) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 500) else Modifier),
                 )
                 Text(
                     text = (counts[name] ?: 0).toString(),
