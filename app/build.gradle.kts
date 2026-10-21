@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Signing data lives in keystore.properties, which is never committed.
+val signingProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.isFile) file.inputStream().use(::load)
+}
+val hasSigning = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    .all { !signingProperties.getProperty(it).isNullOrBlank() }
 
 android {
     namespace = "io.github.gonzsanz.cobalttv"
@@ -11,12 +21,24 @@ android {
         applicationId = "io.github.gonzsanz.cobalttv"
         minSdk = 24
         targetSdk = 37
-        versionCode = 5
-        versionName = "0.5.0"
+        versionCode = 100
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        if (hasSigning) {
+            create("release") {
+                storeFile = file(signingProperties.getProperty("storeFile"))
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (hasSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

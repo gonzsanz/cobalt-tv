@@ -1,17 +1,26 @@
-# Cobalt TV
+﻿# Cobalt TV
 
 Reproductor IPTV para Android TV, escrito en Kotlin con Jetpack Compose for TV y
 Media3. Pensado para uso personal y un grupo pequeño de amigos: cada usuario
 configura sus propias fuentes y reproduce contenido que tiene derecho a usar.
 
-> **Estado: Fase 5 completada (Xtream Codes).** La app importa listas M3U/M3U8
-> por URL (y por archivo con el selector del sistema) y cuentas Xtream Codes
-> (servidor, usuario y contraseña). Los canales reales aparecen en TV en
-> directo, Inicio y Búsqueda, con filtros por categoría y reproducción HLS/MP4.
-> Incluye favoritos persistentes, zapping con el mando, EPG/XMLTV
-> (ahora/siguiente) y normalización de películas y series Xtream para la Fase 6.
-> Versión actual: **0.5.0**. Verificada en el emulador Android TV (API 36) con
-> D-pad contra un servidor Xtream local de pruebas.
+> **Versión 1.0.0.** Reproductor IPTV para Android TV con diseño inspirado en
+> TiviMate: TV en directo con vista previa, guía EPG en cuadrícula, películas y
+> series (fichas con sinopsis y episodios), favoritos, zapping y listas M3U o
+> cuentas Xtream Codes. Verificada en el emulador Android TV (API 36) con D-pad.
+
+## Instalar en tu TV
+
+Descarga siempre la última versión con **Downloader** (Android TV / Fire TV):
+
+```text
+https://github.com/gonzsanz/cobalt-tv/releases/latest/download/cobalt-tv.apk
+```
+
+También puedes crear un código en Downloader (aftvnews.com/downloader) que apunte
+a esa URL y teclear solo el código. Permite instalar apps de orígenes
+desconocidas para Downloader en los ajustes de la TV. Las actualizaciones se
+instalan encima sin perder la fuente.
 
 ![Banner](app/src/main/res/drawable/tv_banner.png)
 

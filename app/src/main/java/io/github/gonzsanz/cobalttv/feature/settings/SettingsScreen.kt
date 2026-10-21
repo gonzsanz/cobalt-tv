@@ -1,4 +1,4 @@
-package io.github.gonzsanz.cobalttv.feature.settings
+﻿package io.github.gonzsanz.cobalttv.feature.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -93,7 +93,7 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     title = "Acerca de Cobalt TV",
-                    subtitle = "Versión ${BuildConfig.VERSION_NAME} · Fase 5",
+                    subtitle = "Versión ${BuildConfig.VERSION_NAME}",
                     icon = Icons.Filled.Info,
                     onClick = { onToast("Cobalt TV ${BuildConfig.VERSION_NAME}, uso personal.") },
                 )
